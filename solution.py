@@ -61,5 +61,6 @@ if __name__ == '__main__':
     print(C, '\n')
     print(P, '\n')
     print(L, '\n')
+    #alterei
     
 
