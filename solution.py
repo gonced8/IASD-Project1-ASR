@@ -6,7 +6,11 @@ import search
 
 
 class ASARProblem(search.Problem):
-    pass
+    def __init__(self):
+        search.Problem.__init__(self, None)
+
+    def load(self, f):
+        self.A, self.C, self.P, self.L = read_input_from_file(f)
 
 
 def get_argv():
@@ -19,46 +23,49 @@ def get_argv():
     return filename
 
 
-def read_input(filename):
+def read_input_from_file(f):
     A = []
     C = []
     P = []
     L = []
 
-    with open(filename, 'r') as f:
-        for line in f.readlines():
-            splitted = line.split()
-            if not splitted:
-                continue
+    for line in f.readlines():
+        splitted = line.split()
+        if not splitted:
+            continue
 
-            code = splitted[0]
-            arg = splitted[1:]
+        code = splitted[0]
+        arg = splitted[1:]
 
-            if code == 'A':
-                d = dict(zip(["code", "start", "end"], arg))
-                A.append(d)
+        if code == 'A':
+            d = dict(zip(["code", "start", "end"], arg))
+            A.append(d)
 
-            elif code == 'C':
-                d = dict(zip(["class", "dr"], arg))
-                C.append(d)
+        elif code == 'C':
+            d = dict(zip(["class", "dr"], arg))
+            C.append(d)
 
-            elif code == 'P':
-                d = dict(zip(["airplane", "class"], arg))
-                P.append(d)
+        elif code == 'P':
+            d = dict(zip(["airplane", "class"], arg))
+            P.append(d)
 
-            elif code == 'L':
-                d = dict(zip(["dep", "arr", "dl"], arg))
-                d.update({ arg[i]: arg[i+1] for i in range(3, len(arg), 2) })
-                L.append(d)
+        elif code == 'L':
+            d = dict(zip(["dep", "arr", "dl"], arg[:3]))
+            d.update({ arg[i]: arg[i+1] for i in range(3, len(arg), 2) })
+            L.append(d)
 
     return A, C, P, L
 
 
 if __name__ == '__main__':
     filename = get_argv()
-    A, C, P, L = read_input(filename)
-    print(A, '\n')
-    print(C, '\n')
-    print(P, '\n')
-    print(L, '\n')
 
+    p = ASARProblem()
+
+    with open(filename, 'r') as f:
+        p.load(f)
+
+    print(p.A, '\n')
+    print(p.C, '\n')
+    print(p.P, '\n')
+    print(p.L, '\n')
