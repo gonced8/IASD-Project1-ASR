@@ -7,7 +7,8 @@ import search
 
 class ASARProblem(search.Problem):
     def __init__(self):
-        search.Problem.__init__(self, None)
+        super().__init__(None)
+        self.A = self.C = self.P = self.L = []
 
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
@@ -57,6 +58,15 @@ def read_input_from_file(f):
     return A, C, P, L
 
 
+def sumtime(t1, t2):
+    # Receives two time strings and returns one string of the summed time
+    sumtime = [int(t1[i:i+2]) + int(t2[i:i+2]) for i in range(0,len(t1),2)]
+    if sumtime[1] >= 60: # More than 60 minutes
+        sumtime[0] += 1
+        sumtime[1] -= 60
+    return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
+    # Returns string with added zeros if necessary, format hhmm
+
 if __name__ == '__main__':
     filename = get_argv()
 
@@ -69,3 +79,5 @@ if __name__ == '__main__':
     print(p.C, '\n')
     print(p.P, '\n')
     print(p.L, '\n')
+
+    print(sumtime("0630", "1230"))
