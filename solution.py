@@ -6,7 +6,7 @@ import search
 
 
 class state:
-    def __init__(self, nplanes=None, nlegs=None):
+    def __init__(self, nplanes=None, legs=None):
         if nplanes:
             self.tod = [None] * nplanes
             self.schedule = [[]] * nplanes
@@ -14,8 +14,8 @@ class state:
             self.tod = None
             self.schedule = None
 
-        if nlegs:
-            self.remaining = list(range(nlegs))
+        if legs:
+            self.remaining = [leg for leg in legs]
         else:
             self.remaining = None
 
@@ -27,9 +27,7 @@ class ASARProblem(search.Problem):
 
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
-        nplanes = len(self.P)
-        nlegs = len(self.L)
-        self.initial = state(nplanes, nlegs)
+        self.initial = state(len(self.P), self.L)
 
 
 def get_argv():
