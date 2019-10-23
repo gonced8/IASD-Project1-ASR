@@ -13,6 +13,26 @@ class ASARProblem(search.Problem):
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
 
+    def getleg(self, state, plane, leg):
+        """Receives the plane index and the leg number and returns a list
+        containing the departure and arrival airport code"""
+        if plane > len(state.schedule) or leg > len(state.schedule[plane]):
+            return [None, None]
+        return [self.L[state.schedule[plane][leg]]['dep'], self.L[state.schedule[plane][leg]]['arr']]
+
+    def goal_test(self, state):
+        """Returns True if the state is a goal. False otherwise"""
+        if not state.remaining:
+            # There are no remaining legs to add
+            # We can check the validity of our solution
+            for plane in state.schedule:
+                if self.L[plane[0]]['dep'] != self.L[plane[-1]]['arr']:
+                    # Departure airport is not the same as the arrival
+                    return False
+            return True
+        else:
+            return False
+
 
 def get_argv():
     if len(sys.argv)>1:
