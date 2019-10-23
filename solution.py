@@ -5,6 +5,21 @@ import sys
 import search
 
 
+class state:
+    def __init__(self, nplanes=None, nlegs=None):
+        if nplanes:
+            self.tod = [None] * nplanes
+            self.schedule = [[]] * nplanes
+        else:
+            self.tod = None
+            self.schedule = None
+
+        if nlegs:
+            self.remaining = list(range(nlegs))
+        else:
+            self.remaining = None
+
+
 class ASARProblem(search.Problem):
     def __init__(self):
         super().__init__(None)
@@ -12,6 +27,9 @@ class ASARProblem(search.Problem):
 
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
+        nplanes = len(self.P)
+        nlegs = len(self.L)
+        self.initial = state(nplanes, nlegs)
 
 
 def get_argv():
@@ -67,6 +85,7 @@ def sumtime(t1, t2):
     return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
     # Returns string with added zeros if necessary, format hhmm
 
+
 if __name__ == '__main__':
     filename = get_argv()
 
@@ -81,3 +100,7 @@ if __name__ == '__main__':
     print(p.L, '\n')
 
     print(sumtime("0630", "1230"))
+
+    print(p.initial.tod, '\n')
+    print(p.initial.schedule, '\n')
+    print(p.initial.remaining, '\n')
