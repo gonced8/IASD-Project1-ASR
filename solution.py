@@ -55,7 +55,7 @@ def read_input_from_file(f):
             d.update({ arg[i]: arg[i+1] for i in range(3, len(arg), 2) })
             L.append(d)
 
-    return A, C, P, L
+    return [tuple(l) for l in [A, C, P, L]]
 
 
 def sumtime(t1, t2):
