@@ -19,6 +19,13 @@ class state:
         else:
             self.remaining = None
 
+    def initial_time(self):
+        # FINISH THIS FUNCTION. THINK ABOUT DICTIONARIES WITH OBJECTS INSTEAD OF STRINGS
+        leg = self.schedule[0]
+        time = '0000'
+
+        return time
+
 
 class ASARProblem(search.Problem):
     def __init__(self):
@@ -28,6 +35,28 @@ class ASARProblem(search.Problem):
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
         self.initial = state(len(self.P), self.L)
+
+
+    def save(self, f, s):
+        if self.goal_test(s):
+            for i, schedule in enumerate(s.schedule):
+                line = 'S '
+                line += self.P[i]['airplane'] + ' '
+
+                time = s.initial_time()
+                dr = self.C[self.P[i]['class']]
+
+                for leg in s:
+                    line += time + ' '
+                    line += leg['dep'] + ' '
+                    line += leg['arr'] + ' '
+
+                    time = sum_time(time, leg['dl'])
+                    time = sum_time(time, dr)
+
+                f.write(line+'\n')
+        else:
+            f.write("Infeasible.")
 
 
 def get_argv():
@@ -74,7 +103,7 @@ def read_input_from_file(f):
     return [tuple(l) for l in [A, C, P, L]]
 
 
-def sumtime(t1, t2):
+def sum_time(t1, t2):
     # Receives two time strings and returns one string of the summed time
     sumtime = [int(t1[i:i+2]) + int(t2[i:i+2]) for i in range(0,len(t1),2)]
     if sumtime[1] >= 60: # More than 60 minutes
@@ -97,7 +126,7 @@ if __name__ == '__main__':
     print(p.P, '\n')
     print(p.L, '\n')
 
-    print(sumtime("0630", "1230"))
+    print(sum_time("0630", "1230"))
 
     print(p.initial.tod, '\n')
     print(p.initial.schedule, '\n')
