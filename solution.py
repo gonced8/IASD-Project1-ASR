@@ -19,13 +19,6 @@ class state:
         else:
             self.remaining = None
 
-    def initial_time(self):
-        # FINISH THIS FUNCTION. THINK ABOUT DICTIONARIES WITH OBJECTS INSTEAD OF STRINGS
-        leg = self.schedule[0]
-        time = '0000'
-
-        return time
-
 
 class ASARProblem(search.Problem):
     def __init__(self):
@@ -43,7 +36,7 @@ class ASARProblem(search.Problem):
                 line = 'S '
                 line += self.P[i]['airplane'] + ' '
 
-                time = s.initial_time()
+                time = leg_initial_time(schedule[0])
                 dr = self.C[self.P[i]['class']]
 
                 for leg in s:
@@ -70,8 +63,8 @@ def get_argv():
 
 
 def read_input_from_file(f):
-    A = []
-    C = []
+    A = {}
+    C = {}
     P = []
     L = []
 
@@ -84,23 +77,22 @@ def read_input_from_file(f):
         arg = splitted[1:]
 
         if code == 'A':
-            d = dict(zip(["code", "start", "end"], arg))
-            A.append(d)
+            d = {'start': arg[1], 'end': arg[2]}
+            A[arg[0]] = d
 
         elif code == 'C':
-            d = dict(zip(["class", "dr"], arg))
-            C.append(d)
+            C[arg[0]] = arg[1]
 
         elif code == 'P':
-            d = dict(zip(["airplane", "class"], arg))
+            d = {"airplane": arg[0], "class": arg[1]}
             P.append(d)
 
         elif code == 'L':
-            d = dict(zip(["dep", "arr", "dl"], arg[:3]))
+            d = {"dep": arg[0], "arr": arg[1], "dl": arg[2]}
             d.update({ arg[i]: arg[i+1] for i in range(3, len(arg), 2) })
             L.append(d)
 
-    return [tuple(l) for l in [A, C, P, L]]
+    return A, C, P, L
 
 
 def sum_time(t1, t2):
@@ -111,6 +103,14 @@ def sum_time(t1, t2):
         sumtime[1] -= 60
     return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
     # Returns string with added zeros if necessary, format hhmm
+
+
+def leg_initial_time():
+    # FINISH THIS FUNCTION. THINK ABOUT DICTIONARIES WITH OBJECTS INSTEAD OF STRINGS
+    #leg = self.schedule[0]
+    time = '0000'
+
+    return time
 
 
 if __name__ == '__main__':
