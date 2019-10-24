@@ -1,7 +1,5 @@
 #!env/bin/python3.7
 
-import sys
-
 import search
 
 
@@ -30,6 +28,10 @@ class ASARProblem(search.Problem):
         self.initial = state(len(self.P), self.L)
 
 
+    def goal_test(self, s):
+        return True
+
+
     def save(self, f, s):
         if self.goal_test(s):
             for i, schedule in enumerate(s.schedule):
@@ -39,7 +41,7 @@ class ASARProblem(search.Problem):
                 time = leg_initial_time(schedule[0])
                 dr = self.C[self.P[i]['class']]
 
-                for leg in s:
+                for leg in schedule:
                     line += time + ' '
                     line += leg['dep'] + ' '
                     line += leg['arr'] + ' '
@@ -53,11 +55,13 @@ class ASARProblem(search.Problem):
 
 
 def get_argv():
-    if len(sys.argv)>1:
-        filename = sys.argv[1]
+    from sys import argv, exit
+
+    if len(argv)>1:
+        filename = argv[1]
     else:
-        print(sys.argv[0]+" <input file>")
-        sys.exit(-1)
+        print(argv[0]+" <input file>")
+        exit(-1)
 
     return filename
 
@@ -105,20 +109,34 @@ def sum_time(t1, t2):
     # Returns string with added zeros if necessary, format hhmm
 
 
-def leg_initial_time():
+def leg_initial_time(leg):
     # FINISH THIS FUNCTION. THINK ABOUT DICTIONARIES WITH OBJECTS INSTEAD OF STRINGS
-    #leg = self.schedule[0]
     time = '0000'
 
     return time
 
 
+def get_out_filename(in_filename):
+    out_filename = in_filename.split('/')
+    if len(out_filename)==1:
+        sep = '\\'
+        out_filename = in_filename.split('\\')
+    else:
+        sep = '/'
+
+    out_filename[0] = 'output'
+
+    out_filename = sep.join(out_filename)
+
+    return out_filename
+
+
 if __name__ == '__main__':
-    filename = get_argv()
+    in_filename = get_argv()
 
     p = ASARProblem()
 
-    with open(filename, 'r') as f:
+    with open(in_filename, 'r') as f:
         p.load(f)
 
     print(p.A, '\n')
@@ -131,3 +149,9 @@ if __name__ == '__main__':
     print(p.initial.tod, '\n')
     print(p.initial.schedule, '\n')
     print(p.initial.remaining, '\n')
+
+    out_filename = get_out_filename(in_filename)
+    test_state = state(2, None)
+    test_state.schedule = [[p.L[0], p.L[1]], [p.L[2], p.L[3]]]
+    with open(out_filename, 'w') as f:
+        p.save(f, test_state)
