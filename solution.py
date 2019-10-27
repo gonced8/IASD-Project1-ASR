@@ -34,22 +34,11 @@ class ASARProblem(search.Problem):
 
     def save(self, f, s):
         if self.goal_test(s):
-            for i, schedule in enumerate(s.schedule):
-                line = 'S '
-                line += self.P[i]['airplane'] + ' '
-
-                time = leg_initial_time(self.A, schedule[0])
-                dr = self.C[self.P[i]['class']]
-
-                for leg in schedule:
-                    line += time + ' '
-                    line += leg['dep'] + ' '
-                    line += leg['arr'] + ' '
-
-                    time = sum_time(time, leg['dl'])
-                    time = sum_time(time, dr)
-
+            for i, plane_schedule in enumerate(s.schedule):
+                line = formatted_schedule(self.A, self.C, self.P, i, plane_schedule)
                 f.write(line+'\n')
+
+            # Calculate profit
         else:
             f.write("Infeasible.")
 
@@ -140,6 +129,24 @@ def get_out_filename(in_filename):
     out_filename = sep.join(out_filename)
 
     return out_filename
+
+
+def formatted_schedule(A, C, P, i, schedule):
+    line = 'S '
+    line += P[i]['airplane'] + ' '
+
+    time = leg_initial_time(A, schedule[0])
+    dr = C[P[i]['class']]
+
+    for leg in schedule:
+        line += time + ' '
+        line += leg['dep'] + ' '
+        line += leg['arr'] + ' '
+
+        time = sum_time(time, leg['dl'])
+        time = sum_time(time, dr)
+
+    return line
 
 
 if __name__ == '__main__':
