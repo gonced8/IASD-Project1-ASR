@@ -38,7 +38,7 @@ class ASARProblem(search.Problem):
                 line = 'S '
                 line += self.P[i]['airplane'] + ' '
 
-                time = leg_initial_time(schedule[0])
+                time = leg_initial_time(self.A, schedule[0])
                 dr = self.C[self.P[i]['class']]
 
                 for leg in schedule:
@@ -99,21 +99,32 @@ def read_input_from_file(f):
     return A, C, P, L
 
 
-def sum_time(t1, t2):
+def sum_time(t1, t2, sign=1):
     # Receives two time strings and returns one string of the summed time
-    sumtime = [int(t1[i:i+2]) + int(t2[i:i+2]) for i in range(0,len(t1),2)]
-    if sumtime[1] >= 60: # More than 60 minutes
-        sumtime[0] += 1
-        sumtime[1] -= 60
+    if sign>0:
+        sumtime = [int(t1[i:i+2]) + int(t2[i:i+2]) for i in range(0,len(t1),2)]
+        if sumtime[1] >= 60: # More than 60 minutes
+            sumtime[0] += 1
+            sumtime[1] -= 60
+    else:
+        sumtime = [int(t1[i:i+2]) - int(t2[i:i+2]) for i in range(0,len(t1),2)]
+        if sumtime[1] < 0: # More than 0 minutes
+            sumtime[0] -= 1
+            sumtime[1] += 60
+
     return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
     # Returns string with added zeros if necessary, format hhmm
 
 
-def leg_initial_time(leg):
-    # FINISH THIS FUNCTION. THINK ABOUT DICTIONARIES WITH OBJECTS INSTEAD OF STRINGS
-    time = '0000'
+def leg_initial_time(airports, leg):
+    dep_time = airports[leg['dep']]['start']
+    arr_time = airports[leg['arr']]['start']
+    duration = leg['dl']
 
-    return time
+    if sum_time(dep_time, duration) < arr_time:
+        return sum_time(arr_time, duration, -1)
+    else:
+        return dep_time
 
 
 def get_out_filename(in_filename):
