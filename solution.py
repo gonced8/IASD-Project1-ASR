@@ -39,8 +39,23 @@ class ASARProblem(search.Problem):
                 f.write(line+'\n')
 
             # Calculate profit
+            profit = self.calculate_profit(s)
+            f.write('P {}\n'.format(profit))
+
         else:
             f.write("Infeasible.")
+
+
+    def calculate_profit(self, s):
+        profit = 0
+
+        for i, plane_schedule in enumerate(s.schedule):
+            plane_class = self.P[i]['class']
+
+            for leg in plane_schedule:
+                profit += int(leg[plane_class])
+
+        return profit
 
 
 def get_argv():
