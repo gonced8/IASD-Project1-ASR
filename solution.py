@@ -7,8 +7,8 @@ from copy import deepcopy as copy_deepcopy
 class state:
     def __init__(self, nplanes=None, legs=None):
         if nplanes:
-            self.tod = [None] * nplanes
-            self.schedule = [[]] * nplanes
+            self.tod = [None for i in range(nplanes)]
+            self.schedule = [[] for i in range(nplanes)]
         else:
             self.tod = None
             self.schedule = None
@@ -17,6 +17,12 @@ class state:
             self.remaining = [leg for leg in legs]
         else:
             self.remaining = None
+
+        self.g = 0
+        self.h = 0
+
+    def __lt__(self, other):
+        return (self.g + self.h) < (other.g + other.h)
 
 
 class ASARProblem(search.Problem):
@@ -27,11 +33,6 @@ class ASARProblem(search.Problem):
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
         self.initial = state(len(self.P), self.L)
-
-
-    def goal_test(self, s):
-        return True
-
 
     def save(self, f, s):
         if self.goal_test(s):
@@ -45,7 +46,6 @@ class ASARProblem(search.Problem):
 
         else:
             f.write("Infeasible.")
-
 
     def calculate_profit(self, s):
         profit = 0
@@ -65,7 +65,7 @@ class ASARProblem(search.Problem):
             return [None, None]
         return [state.schedule[plane][leg]['dep'], state.schedule[plane][leg]['arr']]
 
-    def goal_test(state):
+    def goal_test(self, state):
         """Returns True if the state is a goal. False otherwise"""
         if not state.remaining:
             # There are no remaining legs to add
@@ -85,21 +85,23 @@ class ASARProblem(search.Problem):
         # Goes to the list of airplanes in self and figures out the class of airplane
         # With the class information goes to the leg to add and figures out the profit
         # For clarity: self.P[a[0]] = {'airplane': 'CS-TUA', 'class': 'a320'}
-        return c + 1/a[1][self.P[a[0]]['class']]
+        return c + 1/int(a[1][self.P[a[0]]['class']])
 
-    def heuristic(self, n):
+    def heuristic(self, n, state=None):
         """Returns the heuristic of node n, which encapsulates a given state"""
+        if n is None:
+            curr_state = state
+        else:
+            curr_state = n.state
         heurfun = 0
         maxprofit = 0
-        for leg in n.state.remaining:
-            for class in list(self.C.keys()):
-                if(leg[class] > maxprofit):
-                    maxprofit = leg[class]
+        for leg in curr_state.remaining:
+            for airplane_class in list(self.C.keys()):
+                if(int(leg[airplane_class]) > maxprofit):
+                    maxprofit = int(leg[airplane_class])
             heurfun += 1/maxprofit
             maxprofit = 0
         return heurfun
-
-
 
     def actions(self, state):
         """Return the actions that can be executed in the given
@@ -128,15 +130,16 @@ class ASARProblem(search.Problem):
                 for next_leg in state.remaining:
                     if next_leg['dep'] != last_airport:
                         continue
-                    new_tod = departure_time(next_leg, curr_time=state.tod[idx])
-                    if new_departure == -1:
+                    new_tod = self.departure_time(next_leg, idx, curr_time=state.tod[idx])
+                    if new_tod == -1:
                         continue
                     yield (idx, next_leg, new_tod)
 
-    def departure_time(self, leg, curr_time = 0):
+    def departure_time(self, leg, idx, curr_time = 0):
         """
         Computes the time at which the airplane can start the next leg
         """
+        airports = self.A
         dep_closing_time = airports[leg['dep']]['end']
         arr_opening_time = airports[leg['arr']]['start']
         arr_closing_time = airports[leg['arr']]['end']
@@ -148,7 +151,7 @@ class ASARProblem(search.Problem):
             dep_time = curr_time
 
         # Minimum time before departing and starting a new flight
-        delta_time = sum_time(duration, self.C[self.A[idx]['class']])
+        delta_time = sum_time(duration, self.C[self.P[idx]['class']])
 
         earliest_arr_time = sum_time(dep_time, duration)
         earliest_dep_time = sum_time(arr_opening_time, duration, -1)
@@ -177,6 +180,8 @@ class ASARProblem(search.Problem):
         new_state.tod[idx_airplane] = new_tod
         new_state.schedule[idx_airplane].append(new_leg)
         new_state.remaining.remove(new_leg)
+        new_state.g = self.path_cost(state.g, state, action, new_state)
+        new_state.h = self.heuristic(None, new_state)
 
         return new_state
 
@@ -242,7 +247,7 @@ def sum_time(t1, t2, sign=1):
     return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
     # Returns string with added zeros if necessary, format hhmm
 
-    
+
 def leg_initial_time(airports, leg):
     dep_time = airports[leg['dep']]['start']
     arr_time = airports[leg['arr']]['start']
@@ -295,6 +300,12 @@ if __name__ == '__main__':
     with open(in_filename, 'r') as f:
         p.load(f)
 
+    sol = search.astar_search(p, p.heuristic)
+    #sol = search.uniform_cost_search(p)
+    out_filename = "result.txt"
+    with open(out_filename, 'w') as f:
+        p.save(f, sol.state)
+    '''
     print(p.A, '\n')
     print(p.C, '\n')
     print(p.P, '\n')
@@ -311,3 +322,4 @@ if __name__ == '__main__':
     test_state.schedule = [[p.L[0], p.L[1]], [p.L[2], p.L[3]]]
     with open(out_filename, 'w') as f:
         p.save(f, test_state)
+    '''
