@@ -13,6 +13,49 @@ class ASARProblem(search.Problem):
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
 
+    def getleg(self, state, plane, leg):
+        """Receives the plane index and the leg number and returns a list
+        containing the departure and arrival airport code"""
+        if plane > len(state.schedule) or leg > len(state.schedule[plane]):
+            return [None, None]
+        return [state.schedule[plane][leg]['dep'], state.schedule[plane][leg]['arr']]
+
+    def goal_test(state):
+        """Returns True if the state is a goal. False otherwise"""
+        if not state.remaining:
+            # There are no remaining legs to add
+            # We can check the validity of our solution
+            for plane in state.schedule:
+                if plane[0]['dep'] != plane[-1]['arr']:
+                    # Departure airport is not the same as the arrival
+                    return False
+            return True
+        else:
+            return False
+
+    def path_cost(self, c, s1, a, s2):
+        """Return the cost of a solution path that arrives at state2 from
+        state1 via action, assuming cost c to get up to state1."""
+        # Receives a = (index of airplane, leg, ...) e.g. (3, {'dep': 'LPPT', 'arr': ...}, ...)
+        # Goes to the list of airplanes in self and figures out the class of airplane
+        # With the class information goes to the leg to add and figures out the profit
+        # For clarity: self.P[a[0]] = {'airplane': 'CS-TUA', 'class': 'a320'}
+        return c + 1/a[1][self.P[a[0]]['class']]
+
+    def heuristic(self, n):
+        """Returns the heuristic of node n, which encapsulates a given state"""
+        heurfun = 0
+        maxprofit = 0
+        for leg in n.state.remaining:
+            for class in list(self.C.keys()):
+                if(leg[class] > maxprofit):
+                    maxprofit = leg[class]
+            heurfun += 1/maxprofit
+            maxprofit = 0
+        return heurfun
+
+
+
 
 def get_argv():
     if len(sys.argv)>1:
