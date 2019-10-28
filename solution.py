@@ -1,6 +1,7 @@
 #!env/bin/python3.7
 
 import search
+from copy import deepcopy as copy_deepcopy
 
 
 class state:
@@ -100,6 +101,85 @@ class ASARProblem(search.Problem):
 
 
 
+    def actions(self, state):
+        """Return the actions that can be executed in the given
+        state. The result would typically be a list, but if there are
+        many actions, consider yielding them one at a time in an
+        iterator, rather than building them all at once.
+
+        Yields:
+        (idx_airplane, leg, add_time)
+        """
+        # Iterate in adding to each airplane
+        for idx, airplane_legs in enumerate(state.schedule):
+            if not airplane_legs:
+                # Iterate in adding each leg
+                for next_leg in state.remaining:
+                    # Compute new departure time at 2nd airport of leg
+                    new_tod = leg_initial_time(self.A, next_leg)
+                    ### function above not yet final
+                    yield (idx, next_leg, new_tod)
+            else:
+                last_airport  = airplane_legs[-1]['arr']
+                # See if plane can't leave the current airport
+                if (state.tod[idx] > self.A[last_airport]['end']):
+                    continue
+                # See which legs can be added
+                for next_leg in state.remaining:
+                    if next_leg['dep'] != last_airport:
+                        continue
+                    new_tod = departure_time(next_leg, curr_time=state.tod[idx])
+                    if new_departure == -1:
+                        continue
+                    yield (idx, next_leg, new_tod)
+
+    def departure_time(self, leg, curr_time = 0):
+        """
+        Computes the time at which the airplane can start the next leg
+        """
+        dep_closing_time = airports[leg['dep']]['end']
+        arr_opening_time = airports[leg['arr']]['start']
+        arr_closing_time = airports[leg['arr']]['end']
+        duration = leg['dl']
+
+        if curr_time == 0:
+            dep_time = airports[leg['dep']]['start']
+        else:
+            dep_time = curr_time
+
+        # Minimum time before departing and starting a new flight
+        delta_time = sum_time(duration, self.C[self.A[idx]['class']])
+
+        earliest_arr_time = sum_time(dep_time, duration)
+        earliest_dep_time = sum_time(arr_opening_time, duration, -1)
+
+        if earliest_arr_time < arr_opening_time:
+            if earliest_dep_time < dep_closing_time:
+                return sum_time(earliest_dep_time, delta_time)
+            else:
+                return -1
+        else:
+            if earliest_arr_time < arr_closing_time:
+                return sum_time(dep_time, delta_time)
+            else:
+                return -1
+
+    def result(self, state, action):
+        """Return the state that results from executing the given
+        action in the given state. The action must be one of
+        self.actions(state)."""
+        new_state = copy_deepcopy(state)
+
+        idx_airplane = action[0]
+        new_leg = action[1]
+        new_tod = action[2]
+
+        new_state.tod[idx_airplane] = new_tod
+        new_state.schedule[idx_airplane].append(new_leg)
+        new_state.remaining.remove(new_leg)
+
+        return new_state
+
 
 def get_argv():
     from sys import argv, exit
@@ -162,7 +242,7 @@ def sum_time(t1, t2, sign=1):
     return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
     # Returns string with added zeros if necessary, format hhmm
 
-
+    
 def leg_initial_time(airports, leg):
     dep_time = airports[leg['dep']]['start']
     arr_time = airports[leg['arr']]['start']
