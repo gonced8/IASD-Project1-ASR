@@ -1,7 +1,9 @@
 #!env/bin/python3.7
 
-import search
 from copy import deepcopy as copy_deepcopy
+import os.path
+
+import search
 
 
 class state:
@@ -35,8 +37,13 @@ class ASARProblem(search.Problem):
         self.initial = state(len(self.P), self.L)
 
     def save(self, f, s):
-        if self.goal_test(s):
+        if s is None:
+            f.write("Infeasible")
+
+        elif self.goal_test(s):
             for i, plane_schedule in enumerate(s.schedule):
+                if not plane_schedule:
+                    continue
                 line = formatted_schedule(self.A, self.C, self.P, i, plane_schedule)
                 f.write(line+'\n')
 
@@ -44,8 +51,6 @@ class ASARProblem(search.Problem):
             profit = self.calculate_profit(s)
             f.write('P {}\n'.format(profit))
 
-        else:
-            f.write("Infeasible.")
 
     def calculate_profit(self, s):
         profit = 0
@@ -71,6 +76,8 @@ class ASARProblem(search.Problem):
             # There are no remaining legs to add
             # We can check the validity of our solution
             for plane in state.schedule:
+                if not plane:
+                    continue
                 if plane[0]['dep'] != plane[-1]['arr']:
                     # Departure airport is not the same as the arrival
                     return False
@@ -119,6 +126,7 @@ class ASARProblem(search.Problem):
                 for next_leg in state.remaining:
                     # Compute new departure time at 2nd airport of leg
                     new_tod = leg_initial_time(self.A, next_leg)
+                    new_tod = self.departure_time(next_leg, idx, new_tod)
                     ### function above not yet final
                     yield (idx, next_leg, new_tod)
             else:
@@ -130,12 +138,12 @@ class ASARProblem(search.Problem):
                 for next_leg in state.remaining:
                     if next_leg['dep'] != last_airport:
                         continue
-                    new_tod = self.departure_time(next_leg, idx, curr_time=state.tod[idx])
+                    new_tod = self.departure_time(next_leg, idx, state.tod[idx])
                     if new_tod == -1:
                         continue
                     yield (idx, next_leg, new_tod)
 
-    def departure_time(self, leg, idx, curr_time = 0):
+    def departure_time(self, leg, idx, dep_time):
         """
         Computes the time at which the airplane can start the next leg
         """
@@ -144,11 +152,6 @@ class ASARProblem(search.Problem):
         arr_opening_time = airports[leg['arr']]['start']
         arr_closing_time = airports[leg['arr']]['end']
         duration = leg['dl']
-
-        if curr_time == 0:
-            dep_time = airports[leg['dep']]['start']
-        else:
-            dep_time = curr_time
 
         # Minimum time before departing and starting a new flight
         delta_time = sum_time(duration, self.C[self.P[idx]['class']])
@@ -260,17 +263,8 @@ def leg_initial_time(airports, leg):
 
 
 def get_out_filename(in_filename):
-    out_filename = in_filename.split('/')
-    if len(out_filename)==1:
-        sep = '\\'
-        out_filename = in_filename.split('\\')
-    else:
-        sep = '/'
-
-    out_filename[0] = 'output'
-
-    out_filename = sep.join(out_filename)
-
+    out_filename = os.path.basename(in_filename)
+    out_filename = os.path.join('output', out_filename)
     return out_filename
 
 
@@ -302,9 +296,11 @@ if __name__ == '__main__':
 
     sol = search.astar_search(p, p.heuristic)
     #sol = search.uniform_cost_search(p)
-    out_filename = "result.txt"
+
+    out_filename = get_out_filename(in_filename)
     with open(out_filename, 'w') as f:
         p.save(f, sol.state)
+
     '''
     print(p.A, '\n')
     print(p.C, '\n')
