@@ -31,6 +31,7 @@ class ASARProblem(search.Problem):
     def __init__(self):
         super().__init__(None)
         self.A = self.C = self.P = self.L = []
+        self.n_nodes = 0
 
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
@@ -174,6 +175,8 @@ class ASARProblem(search.Problem):
         """Return the state that results from executing the given
         action in the given state. The action must be one of
         self.actions(state)."""
+        self.n_nodes += 1
+
         new_state = copy_deepcopy(state)
 
         idx_airplane = action[0]
@@ -296,6 +299,8 @@ if __name__ == '__main__':
 
     sol = search.astar_search(p, p.heuristic)
     #sol = search.uniform_cost_search(p)
+
+    print(p.n_nodes)
 
     out_filename = get_out_filename(in_filename)
     with open(out_filename, 'w') as f:
