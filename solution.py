@@ -39,7 +39,7 @@ class ASARProblem(search.Problem):
 
     def save(self, f, s):
         if s is None:
-            f.write("Infeasible")
+            f.write("Infeasible"+'\n')
 
         elif self.goal_test(s):
             for i, plane_schedule in enumerate(s.schedule):
@@ -304,7 +304,10 @@ if __name__ == '__main__':
 
     out_filename = get_out_filename(in_filename)
     with open(out_filename, 'w') as f:
-        p.save(f, sol.state)
+        if sol is None:
+            p.save(f, None)
+        else:
+            p.save(f, sol.state)
 
     '''
     print(p.A, '\n')
