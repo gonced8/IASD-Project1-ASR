@@ -300,7 +300,7 @@ if __name__ == '__main__':
     sol = search.astar_search(p, p.heuristic)
     #sol = search.uniform_cost_search(p)
 
-    print(p.n_nodes)
+    # print(p.n_nodes)
 
     out_filename = get_out_filename(in_filename)
     with open(out_filename, 'w') as f:
