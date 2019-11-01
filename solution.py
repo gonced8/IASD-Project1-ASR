@@ -105,9 +105,9 @@ class ASARProblem(search.Problem):
 
         heurfun = 0
         for leg in curr_state.remaining:
-            heurfun += leg['maxprofit']
+            heurfun += self.bound - leg['maxprofit']
 
-        return self.bound - heurfun
+        return heurfun
 
     def actions(self, state):
         """Return the actions that can be executed in the given
