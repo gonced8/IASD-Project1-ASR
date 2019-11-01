@@ -84,7 +84,7 @@ class ASARProblem(search.Problem):
     Methods
     -------
     actions(state)
-        
+
     result(state, action)
 
     goal_test(state)
@@ -117,31 +117,45 @@ class ASARProblem(search.Problem):
         many actions, consider yielding them one at a time in an
         iterator, rather than building them all at once.
 
-        Yields:
-        (idx_airplane, leg, add_time)
+        Parameters
+        ----------
+        state : str
+            State of node chosen for expansion
+
+        Yields
+        -------
+        tuple
+            A tuple containing the index of the airplane to which the leg will
+            be added, the leg to be added and the new tod of the airplane
         """
-        # Iterate in adding to each airplane
+
         for idx, airplane_legs in enumerate(state.schedule):
             if not airplane_legs:
-                # Iterate in adding each leg
+                # Airplane has not flown any legs
                 for next_leg in state.remaining:
                     # Compute new departure time at 2nd airport of leg
-                    new_tod = leg_initial_time(self.A, next_leg)
-                    new_tod = self.departure_time(next_leg, idx, new_tod)
-                    ### function above not yet final
-                    yield (idx, next_leg, new_tod)
-            else:
-                last_airport  = airplane_legs[-1]['arr']
-                # See if plane can't leave the current airport
-                if (state.tod[idx] > self.A[last_airport]['end']):
-                    continue
-                # See which legs can be added
-                for next_leg in state.remaining:
-                    if next_leg['dep'] != last_airport:
-                        continue
-                    new_tod = self.departure_time(next_leg, idx, state.tod[idx])
+                    dep_time = leg_initial_time(self.A, next_leg)
+                    new_tod = self.nextleg_dep_time(next_leg, idx, dep_time)
                     if new_tod == -1:
                         continue
+                    yield (idx, next_leg, new_tod)
+            else:
+                if not state.tod[idx]:
+                    # Empty string, schedule for this airplane is full
+                    continue
+                for next_leg in state.remaining:
+                    if next_leg['dep'] != airplane_legs[-1]['arr']:
+                        continue
+                    new_tod = self.nextleg_dep_time(next_leg, idx, state.tod[idx])
+                    if new_tod == -1:
+                        # Is not valid time-wise
+                        continue
+                    if new_tod > self.A[next_leg['arr']]['end']:
+                        # Can't leave the last airport
+                        if airplane_legs[0]['dep'] != next_leg['arr']:
+                            # Beginning and final airports don't match, invalid node
+                            continue
+                        new_tod = ''
                     yield (idx, next_leg, new_tod)
 
     def result(self, state, action):
@@ -266,33 +280,6 @@ class ASARProblem(search.Problem):
 
         return profit
 
-    def departure_time(self, leg, idx, dep_time):
-        """
-        Computes the time at which the airplane can start the next leg
-        """
-        airports = self.A
-        dep_closing_time = airports[leg['dep']]['end']
-        arr_opening_time = airports[leg['arr']]['start']
-        arr_closing_time = airports[leg['arr']]['end']
-        duration = leg['dl']
-
-        # Minimum time before departing and starting a new flight
-        delta_time = sum_time(duration, self.C[self.P[idx]['class']])
-
-        earliest_arr_time = sum_time(dep_time, duration)
-        earliest_dep_time = sum_time(arr_opening_time, duration, -1)
-
-        if earliest_arr_time < arr_opening_time:
-            if earliest_dep_time < dep_closing_time:
-                return sum_time(earliest_dep_time, delta_time)
-            else:
-                return -1
-        else:
-            if earliest_arr_time < arr_closing_time:
-                return sum_time(dep_time, delta_time)
-            else:
-                return -1
-
     def formatted_schedule(self, i, schedule):
         """Makes a string which represents an airplane schedule, that will be written int the output file (with the formatting specified in the Mini-Project statement)
         
@@ -325,6 +312,32 @@ class ASARProblem(search.Problem):
 
         return line
 
+    def nextleg_dep_time(self, leg, idx, dep_time):
+        """
+        Computes the time at which the airplane can start the next leg
+        """
+        airports = self.A
+        dep_closing_time = airports[leg['dep']]['end']
+        arr_opening_time = airports[leg['arr']]['start']
+        arr_closing_time = airports[leg['arr']]['end']
+        duration = leg['dl']
+
+        # Minimum time before departing and starting a new flight
+        delta_time = sum_time(duration, self.C[self.P[idx]['class']])
+
+        earliest_arr_time = sum_time(dep_time, duration)
+        earliest_dep_time = sum_time(arr_opening_time, duration, -1)
+
+        if earliest_arr_time < arr_opening_time:
+            if earliest_dep_time < dep_closing_time:
+                return sum_time(earliest_dep_time, delta_time)
+            else:
+                return -1
+        else:
+            if earliest_arr_time < arr_closing_time:
+                return sum_time(dep_time, delta_time)
+            else:
+                return -1
 
 def read_input_from_file(f):
     """From an open file f, reads each line and processes it, creating the problem input variables.
