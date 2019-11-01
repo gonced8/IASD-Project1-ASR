@@ -35,7 +35,8 @@ class ASARProblem(search.Problem):
 
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
-        self.L, self.bound = get_maxprofits(self.L)
+        self.L = get_maxprofits(self.L)
+        self.bound = sum(self.L)
         self.initial = state(len(self.P), self.L)
 
     def save(self, f, s):
@@ -197,7 +198,7 @@ def get_maxprofits(legs):
             profits = [int(leg[c]) for c in classes]
             leg['maxprofit'] = max(profits)
 
-    return legs, sum(profits)
+    return legs
 
 
 def get_argv():
