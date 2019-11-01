@@ -83,8 +83,26 @@ class ASARProblem(search.Problem):
 
     Methods
     -------
-    __lt__(self, other)
-        Compares each state through their evaluation function values: f(n)=g(n)+h(n)
+    actions(state)
+        
+    result(state, action)
+
+    goal_test(state)
+
+    path_cost(c, s1, a, s2)
+
+    heuristic(n, state=None)
+
+    load(f)
+        Loads a problem from a (opened) file object f (the formatting is specified in the Mini-Project statement). Groups the max profit of each leg in a list. Initializes the initial state of this problem
+    save(f)
+        Saves a solution state s to a (opened) file object f (the formatting is specified in the Mini-Project statement).
+    calculate_profit(s)
+        Calculates the profit of the provided state (which corresponds to the airplanes schedules)
+    departure_time(leg, idx, dep_time)
+
+    formatted_schedule(i, schedule)
+        Makes a string which represents an airplane schedule, that will be written int the output file (with the formatting specified in the Mini-Project statement)
     """
 
     def __init__(self):
@@ -196,7 +214,7 @@ class ASARProblem(search.Problem):
             for i, plane_schedule in enumerate(s.schedule):
                 if not plane_schedule:
                     continue
-                line = self.formatted_schedule(self.A, self.C, self.P, i, plane_schedule)
+                line = self.formatted_schedule(i, plane_schedule)
                 f.write(line+'\n')
 
             # Calculate profit
@@ -241,12 +259,12 @@ class ASARProblem(search.Problem):
             else:
                 return -1
 
-    def formatted_schedule(self, A, C, P, i, schedule):
+    def formatted_schedule(self, i, schedule):
         line = 'S '
-        line += P[i]['airplane'] + ' '
+        line += self.P[i]['airplane'] + ' '
 
-        time = leg_initial_time(A, schedule[0])
-        dr = C[P[i]['class']]
+        time = leg_initial_time(self.A, schedule[0])
+        dr = self.C[self.P[i]['class']]
 
         for leg in schedule:
             line += time + ' '
