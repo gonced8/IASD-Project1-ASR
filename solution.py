@@ -35,7 +35,7 @@ class ASARProblem(search.Problem):
 
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
-        self.L = get_maxprofits(self.L)
+        self.L, self.bound = get_maxprofits(self.L)
         self.initial = state(len(self.P), self.L)
 
     def save(self, f, s):
@@ -93,7 +93,7 @@ class ASARProblem(search.Problem):
         # Goes to the list of airplanes in self and figures out the class of airplane
         # With the class information goes to the leg to add and figures out the profit
         # For clarity: self.P[a[0]] = {'airplane': 'CS-TUA', 'class': 'a320'}
-        return c + 1/int(a[1][self.P[a[0]]['class']])
+        return c + self.bound - int(a[1][self.P[a[0]]['class']])
 
     def heuristic(self, n, state=None):
         """Returns the heuristic of node n, which encapsulates a given state"""
@@ -104,9 +104,9 @@ class ASARProblem(search.Problem):
 
         heurfun = 0
         for leg in curr_state.remaining:
-            heurfun += 1/leg['maxprofit']
+            heurfun += leg['maxprofit']
 
-        return heurfun
+        return self.bound - heurfun
 
     def actions(self, state):
         """Return the actions that can be executed in the given
@@ -196,10 +196,10 @@ def get_maxprofits(legs):
         for leg in legs:
             profits = [int(leg[c]) for c in classes]
             leg['maxprofit'] = max(profits)
-        
-    return legs
 
-    
+    return legs, sum(profits)
+
+
 def get_argv():
     from sys import argv, exit
 
