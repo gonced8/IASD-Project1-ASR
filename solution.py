@@ -485,19 +485,24 @@ def main(args):
     Parameters:
     -----------
     args : list of strings
-        The first element of args corresponds to the input file name
+        The first element of args corresponds to the input file name. The second element is a boolean to print the number of nodes.
     """
+    if(len(args)<1):
+        print("No input filename was given. Returned")
+        return
+
+    in_filename = args[0]
 
     p = ASARProblem()
 
-    in_filename = args[0]
     with open(in_filename, 'r') as f:
         p.load(f)
 
     sol = search.astar_search(p, p.heuristic)
     #sol = search.uniform_cost_search(p)
 
-    #print(p.n_nodes)
+    if len(args)>1 and bool(args[1]):
+        print(p.n_nodes)
 
     out_filename = get_out_filename(in_filename)
     with open(out_filename, 'w') as f:
