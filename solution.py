@@ -71,7 +71,7 @@ class ASARProblem(search.Problem):
     Attributes
     ----------
     A : dictionary
-        Dictionary with available airports. The key is the airport code and the value is a dictionary with keys: opening and closing times
+        Dictionary with available airports. The key is the airport code and the value is a dictionary with keys: start and end times
     C : dictionary
         Dictionary where the keys are the airplanes classes and the values are their rotation times
     L : list of dictionaries
@@ -181,11 +181,13 @@ class ASARProblem(search.Problem):
 
     def path_cost(self, c, s1, a, s2):
         """Return the cost of a solution path that arrives at state2 from
-        state1 via action, assuming cost c to get up to state1."""
-        # Receives a = (index of airplane, leg, ...) e.g. (3, {'dep': 'LPPT', 'arr': ...}, ...)
-        # Goes to the list of airplanes in self and figures out the class of airplane
-        # With the class information goes to the leg to add and figures out the profit
-        # For clarity: self.P[a[0]] = {'airplane': 'CS-TUA', 'class': 'a320'}
+        state1 via action, assuming cost c to get up to state1.
+        
+        Receives a = (index of airplane, leg, ...) e.g. (3, {'dep': 'LPPT', 'arr': ...}, ...)
+        Goes to the list of airplanes in self and figures out the class of airplane
+        With the class information goes to the leg to add and figures out the profit
+        For clarity: self.P[a[0]] = {'airplane': 'CS-TUA', 'class': 'a320'}
+        """
         return c + 1/a[1][self.P[a[0]]['class']]
 
     def heuristic(self, n, state=None):
@@ -247,6 +249,11 @@ class ASARProblem(search.Problem):
         Parameters
         ----------
         s : state object
+
+        Returns
+        -------
+        profit : int
+            sum of the profits of each schedules
         """
 
         profit = 0
@@ -295,7 +302,13 @@ class ASARProblem(search.Problem):
         ----------
         i : int
         schedule : list of dictionaries
+
+        Returns
+        -------
+        line : string
+            String that will be written in the output file. Represents a schedule
         """
+
         line = 'S '
         line += self.P[i]['airplane'] + ' '
 
@@ -314,6 +327,25 @@ class ASARProblem(search.Problem):
 
 
 def read_input_from_file(f):
+    """From an open file f, reads each line and processes it, creating the problem input variables.
+
+    Parameters
+    ----------
+    f : file
+        Opened input file (with the formatting given in the Mini-Project statement)
+
+    Returns
+    -------
+    A : dictionary
+        Dictionary with airports, where the keys are the airport codes. The value is a dictionary with keys: 'start' and 'end' times
+    C : dictionary
+        Dictionary with planes classes, where the keys are the aircraft classes and the values are the rotation times
+    P : list of dictionaries
+        List of dictionaries, where each dictionary is a plane. These dictionaries have as keys: airplane and class
+    L : list of dictionaries
+        List of dictionaries, where each dictionary is a leg. These dictionaries have as keys: dep, arr, dl, and the aircraft classes
+    """
+
     A = {}
     C = {}
     P = []
@@ -369,16 +401,54 @@ def sum_time(t1, t2, sign=1):
     # Returns string with added zeros if necessary, format hhmm
 
 def leg_initial_time(airports, leg):
-    dep_time = airports[leg['dep']]['start']
-    arr_time = airports[leg['arr']]['start']
-    duration = leg['dl']
+    """With the given leg, returns the earliest time at which an airplane could depart
 
-    if sum_time(dep_time, duration) < arr_time:
-        return sum_time(arr_time, duration, -1)
+    It takes into account the opening and closing times of each airport
+
+    Parameters
+    ----------
+    airports : dictionary
+        Dictionary with available airports. The key is the airport code and the value is a dictionary with keys: start and end times
+    leg : dictionary
+        Leg which initial time will be computed
+
+    Returns
+    -------
+    string
+        Earliest time at which the aircraft can departure. Empty string '' in case of invalid leg
+    """
+
+    dep = airports[leg['dep']]
+    arr = airports[leg['arr']]
+    duration = leg['dl']
+    
+    earliest_arr_time = sum_time(dep['start'], duration)
+    earliest_dep_time = sum_time(arr['start'], duration, -1)
+
+    if earliest_arr_time < arr['start']:    # plane arrives before arrival airport is opened
+        if earliest_dep_time < dep['end']:  # plane departs before departure airport closes
+            return earliest_dep_time
     else:
-        return dep_time
+        if earliest_arr_time < arr['end']:  # plane arrives before arrival airport closes
+            return dep['start']
+    return ''                               # invalid leg timing
 
 def get_maxprofits(legs):
+    """Loops through each leg and gets the maximum profit of that leg
+
+    The max profit is added as key to the legs dictionary
+
+    Parameters
+    ----------
+    legs : list of dictionaries
+        List of dictionaries, where each dictionary represents a leg
+
+    Returns
+    -------
+    legs : list of dictionaries
+        Same list as input, but each leg now has a key named maxprofit with the corresponding max profit
+    """
+
     if legs:
         classes = list(legs[0].keys())[3:]
 
@@ -389,12 +459,35 @@ def get_maxprofits(legs):
     return legs
 
 def get_out_filename(in_filename):
+    """Receives a filename and returns the string "output/filename". Works in every operating system
+
+    Parameters:
+    -----------
+    in_filename : string
+        Filename to use
+
+    Returns:
+    --------
+    out_filename : string
+        Filename inside directory output
+    """
+
     out_filename = os.path.basename(in_filename)
     out_filename = os.path.join('output', out_filename)
     return out_filename
 
 
 def main(args):
+    """ Main function
+    
+    Initializes the problem and solves it with A* search. Saves the result in a file inside output folder
+
+    Parameters:
+    -----------
+    args : list of strings
+        The first element of args corresponds to the input file name
+    """
+
     p = ASARProblem()
 
     in_filename = args[0]
