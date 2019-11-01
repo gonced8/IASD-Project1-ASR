@@ -64,105 +64,41 @@ class state:
 
 
 class ASARProblem(search.Problem):
-    """A class used to represent the ASAR problem, derived from the abstract class search.Problem (https://github.com/aimacode/aima-python)
-
-    ...
-
-    Attributes
-    ----------
-    A : dictionary
-        Dictionary with available airports. The key is the airport code and the value is a dictionary with keys: opening and closing times
-    C : dictionary
-        Dictionary where the keys are the airplanes classes and the values are their rotation times
-    L : list of dictionaries
-        List of dictionaries where each dictionary represents a leg. Each leg has as keys the departure and arrival airports and the available classes (which values correspond to the profits associated)
-    P : list of dictionaries
-        List of dictionaries where each dictionary represents an airplane. Each airplane has as keys its name and class
-    n_nodes : int
-        Number of generated nodes
-
-    Methods
-    -------
-    actions(state)
-        
-    result(state, action)
-
-    goal_test(state)
-
-    path_cost(c, s1, a, s2)
-
-    heuristic(n, state=None)
-
-    load(f)
-        Loads a problem from a (opened) file object f (the formatting is specified in the Mini-Project statement). Gets the max profit of each leg. Initializes the initial state of this problem
-    save(f)
-        Saves a solution state s to a (opened) file object f (the formatting is specified in the Mini-Project statement).
-    calculate_profit(s)
-        Calculates the profit of the provided state (which corresponds to the airplanes schedules)
-    departure_time(leg, idx, dep_time)
-
-    formatted_schedule(i, schedule)
-        Makes a string which represents an airplane schedule, that will be written int the output file (with the formatting specified in the Mini-Project statement)
-    """
-
     def __init__(self):
         super().__init__(None)
-        self.A = self.C = {}
-        self.L = self.P = []
+        self.A = self.C = self.P = self.L = []
         self.n_nodes = 0
 
-    def actions(self, state):
-        """Return the actions that can be executed in the given
-        state. The result would typically be a list, but if there are
-        many actions, consider yielding them one at a time in an
-        iterator, rather than building them all at once.
+    def load(self, f):
+        self.A, self.C, self.P, self.L = read_input_from_file(f)
+        self.L = get_maxprofits(self.L)
+        self.initial = state(len(self.P), self.L)
 
-        Yields:
-        (idx_airplane, leg, add_time)
-        """
-        # Iterate in adding to each airplane
-        for idx, airplane_legs in enumerate(state.schedule):
-            if not airplane_legs:
-                # Iterate in adding each leg
-                for next_leg in state.remaining:
-                    # Compute new departure time at 2nd airport of leg
-                    new_tod = leg_initial_time(self.A, next_leg)
-                    new_tod = self.departure_time(next_leg, idx, new_tod)
-                    ### function above not yet final
-                    yield (idx, next_leg, new_tod)
-            else:
-                last_airport  = airplane_legs[-1]['arr']
-                # See if plane can't leave the current airport
-                if (state.tod[idx] > self.A[last_airport]['end']):
+    def save(self, f, s):
+        if s is None:
+            f.write("Infeasible"+'\n')
+
+        elif self.goal_test(s):
+            for i, plane_schedule in enumerate(s.schedule):
+                if not plane_schedule:
                     continue
-                # See which legs can be added
-                for next_leg in state.remaining:
-                    if next_leg['dep'] != last_airport:
-                        continue
-                    new_tod = self.departure_time(next_leg, idx, state.tod[idx])
-                    if new_tod == -1:
-                        continue
-                    yield (idx, next_leg, new_tod)
+                line = self.formatted_schedule(self.A, self.C, self.P, i, plane_schedule)
+                f.write(line+'\n')
 
-    def result(self, state, action):
-        """Return the state that results from executing the given
-        action in the given state. The action must be one of
-        self.actions(state)."""
-        self.n_nodes += 1
+            # Calculate profit
+            profit = self.calculate_profit(s)
+            f.write('P {}\n'.format(profit))
 
-        new_state = copy_deepcopy(state)
+    def calculate_profit(self, s):
+        profit = 0
 
-        idx_airplane = action[0]
-        new_leg = action[1]
-        new_tod = action[2]
+        for i, plane_schedule in enumerate(s.schedule):
+            plane_class = self.P[i]['class']
 
-        new_state.tod[idx_airplane] = new_tod
-        new_state.schedule[idx_airplane].append(new_leg)
-        new_state.remaining.remove(new_leg)
-        new_state.g = self.path_cost(state.g, state, action, new_state)
-        new_state.h = self.heuristic(None, new_state)
+            for leg in plane_schedule:
+                profit += leg[plane_class]
 
-        return new_state
+        return profit
 
     def goal_test(self, state):
         """Returns True if the state is a goal. False otherwise"""
@@ -201,65 +137,54 @@ class ASARProblem(search.Problem):
 
         return heurfun
 
-    def load(self, f):
-        """Loads a problem from a (opened) file object f (the formatting is specified in the Mini-Project statement). Gets the max profit of each leg. Initializes the initial state of this problem
+    def actions(self, state):
+        """Return the actions that can be executed in the given
+        state. The result would typically be a list, but if there are
+        many actions, consider yielding them one at a time in an
+        iterator, rather than building them all at once.
 
         Parameters
         ----------
-        f : file
+        state : str
+            State of node chosen for expansion
+
+        Yields
+        -------
+        tuple
+            A tuple containing the index of the airplane to which the leg will
+            be added, the leg to be added and the new tod of the airplane
         """
 
-        self.A, self.C, self.P, self.L = read_input_from_file(f)
-        self.L = get_maxprofits(self.L)
-        self.initial = state(len(self.P), self.L)
-
-    def save(self, f, s):
-        """Saves a solution state s to a (opened) file object f (the formatting is specified in the Mini-Project statement).
-
-        Parameters
-        ----------
-        f : file
-        s : state object
-        """
-
-        if s is None:
-            f.write("Infeasible"+'\n')
-
-        elif self.goal_test(s):     # safety test to be sure it's a goal
-            for i, plane_schedule in enumerate(s.schedule):
-                if not plane_schedule:    # plane has no flights
+        for idx, airplane_legs in enumerate(state.schedule):
+            if not airplane_legs:
+                # Airplane has not flown any legs
+                for next_leg in state.remaining:
+                    # Compute new departure time at 2nd airport of leg
+                    dep_time = leg_initial_time(self.A, next_leg)
+                    new_tod = self.nextleg_dep_time(next_leg, idx, dep_time)
+                    if new_tod == -1:
+                        continue
+                    yield (idx, next_leg, new_tod)
+            else:
+                if not state.tod[idx]:
+                    # Empty string, schedule for this airplane is full
                     continue
-                line = self.formatted_schedule(i, plane_schedule)
-                f.write(line+'\n')
+                for next_leg in state.remaining:
+                    if next_leg['dep'] != airplane_legs[-1]['arr']:
+                        continue
+                    new_tod = self.nextleg_dep_time(next_leg, idx, state.tod[idx])
+                    if new_tod == -1:
+                        # Is not valid time-wise
+                        continue
+                    if new_tod > self.A[next_leg['arr']]['end']:
+                        # Can't leave the last airport
+                        if airplane_legs[0]['dep'] != next_leg['arr']:
+                            # Beginning and final airports don't match, invalid node
+                            continue
+                        new_tod = ''
+                    yield (idx, next_leg, new_tod)
 
-            # Calculate profit
-            profit = self.calculate_profit(s)
-            f.write('P {}\n'.format(profit))
-
-        else:
-            print("An error occured in this problem")
-
-    def calculate_profit(self, s):
-        """Calculates the profit of the provided state (which corresponds to the airplanes schedules)
-
-        Loops through each schedule in the state s and sums the correspoing profit to a total profit
-        
-        Parameters
-        ----------
-        s : state object
-        """
-
-        profit = 0
-
-        for i, plane_schedule in enumerate(s.schedule):
-            plane_class = self.P[i]['class']
-
-            for leg in plane_schedule:
-                profit += leg[plane_class]
-
-        return profit
-
-    def departure_time(self, leg, idx, dep_time):
+    def nextleg_dep_time(self, leg, idx, dep_time):
         """
         Computes the time at which the airplane can start the next leg
         """
@@ -286,21 +211,32 @@ class ASARProblem(search.Problem):
             else:
                 return -1
 
-    def formatted_schedule(self, i, schedule):
-        """Makes a string which represents an airplane schedule, that will be written int the output file (with the formatting specified in the Mini-Project statement)
-        
-        Receives an index - i - which corresponds to the selected airplane and a list of legs - schedule - with the associated legs. Loops through each schedule and gets a formatted string accordingly to the requisites in the Mini-Project statement.
+    def result(self, state, action):
+        """Return the state that results from executing the given
+        action in the given state. The action must be one of
+        self.actions(state)."""
+        self.n_nodes += 1
 
-        Parameters
-        ----------
-        i : int
-        schedule : list of dictionaries
-        """
+        new_state = copy_deepcopy(state)
+
+        idx_airplane = action[0]
+        new_leg = action[1]
+        new_tod = action[2]
+
+        new_state.tod[idx_airplane] = new_tod
+        new_state.schedule[idx_airplane].append(new_leg)
+        new_state.remaining.remove(new_leg)
+        new_state.g = self.path_cost(state.g, state, action, new_state)
+        new_state.h = self.heuristic(None, new_state)
+
+        return new_state
+
+    def formatted_schedule(self, A, C, P, i, schedule):
         line = 'S '
-        line += self.P[i]['airplane'] + ' '
+        line += P[i]['airplane'] + ' '
 
-        time = leg_initial_time(self.A, schedule[0])
-        dr = self.C[self.P[i]['class']]
+        time = leg_initial_time(A, schedule[0])
+        dr = C[P[i]['class']]
 
         for leg in schedule:
             line += time + ' '
@@ -393,6 +329,7 @@ def get_out_filename(in_filename):
     out_filename = os.path.join('output', out_filename)
     return out_filename
 
+
 def main(args):
     p = ASARProblem()
 
@@ -403,7 +340,7 @@ def main(args):
     sol = search.astar_search(p, p.heuristic)
     #sol = search.uniform_cost_search(p)
 
-    #print(p.n_nodes)
+    print(p.n_nodes)
 
     out_filename = get_out_filename(in_filename)
     with open(out_filename, 'w') as f:
