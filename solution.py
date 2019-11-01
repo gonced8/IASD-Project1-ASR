@@ -7,7 +7,35 @@ import search
 
 
 class state:
+    """A class used to represent the state of each node in this search problem
+
+    ...
+
+    Attributes
+    ----------
+    tod : list of strings
+        A list of string, where each string represents the time of departure of the i-th plane
+    schedule : list of lists of dictionaries
+        A list of schedules per plane. The first index corresponds to the plane and the second to the leg, with is a dictionary
+    remaining: list of dictionaries
+        A list of the remaining legs, that is, legs not yet assigned
+
+    Methods
+    -------
+    __lt__(self, other)
+        Compares each state through their evaluation function values: f(n)=g(n)+h(n)
+    """
+
     def __init__(self, nplanes=None, legs=None):
+        """
+        Parameters
+        ----------
+        nplanes : int, optional
+            The number of planes (default is None)
+        legs : list of dictionaries, optional
+            A list with the existing legs (default is None)
+        """
+
         if nplanes:
             self.tod = [None for i in range(nplanes)]
             self.schedule = [[] for i in range(nplanes)]
@@ -24,6 +52,14 @@ class state:
         self.h = 0
 
     def __lt__(self, other):
+        """Compares each state through their evaluation function values: f(n)=g(n)+h(n)
+
+        Returns
+        -------
+        bool
+            True if the evaluation function of the state in the left is less than the one in the right, or False otherwise
+        """
+        
         return (self.g + self.h) < (other.g + other.h)
 
 
@@ -46,7 +82,7 @@ class ASARProblem(search.Problem):
             for i, plane_schedule in enumerate(s.schedule):
                 if not plane_schedule:
                     continue
-                line = formatted_schedule(self.A, self.C, self.P, i, plane_schedule)
+                line = self.formatted_schedule(self.A, self.C, self.P, i, plane_schedule)
                 f.write(line+'\n')
 
             # Calculate profit
@@ -60,16 +96,9 @@ class ASARProblem(search.Problem):
             plane_class = self.P[i]['class']
 
             for leg in plane_schedule:
-                profit += int(leg[plane_class])
+                profit += leg[plane_class]
 
         return profit
-
-    def getleg(self, state, plane, leg):
-        """Receives the plane index and the leg number and returns a list
-        containing the departure and arrival airport code"""
-        if plane > len(state.schedule) or leg > len(state.schedule[plane]):
-            return [None, None]
-        return [state.schedule[plane][leg]['dep'], state.schedule[plane][leg]['arr']]
 
     def goal_test(self, state):
         """Returns True if the state is a goal. False otherwise"""
@@ -93,7 +122,7 @@ class ASARProblem(search.Problem):
         # Goes to the list of airplanes in self and figures out the class of airplane
         # With the class information goes to the leg to add and figures out the profit
         # For clarity: self.P[a[0]] = {'airplane': 'CS-TUA', 'class': 'a320'}
-        return c + 1/int(a[1][self.P[a[0]]['class']])
+        return c + 1/a[1][self.P[a[0]]['class']]
 
     def heuristic(self, n, state=None):
         """Returns the heuristic of node n, which encapsulates a given state"""
@@ -188,28 +217,22 @@ class ASARProblem(search.Problem):
 
         return new_state
 
+    def formatted_schedule(self, A, C, P, i, schedule):
+        line = 'S '
+        line += P[i]['airplane'] + ' '
 
-def get_maxprofits(legs):
-    if legs:
-        classes = list(legs[0].keys())[3:]
+        time = leg_initial_time(A, schedule[0])
+        dr = C[P[i]['class']]
 
-        for leg in legs:
-            profits = [int(leg[c]) for c in classes]
-            leg['maxprofit'] = max(profits)
-        
-    return legs
+        for leg in schedule:
+            line += time + ' '
+            line += leg['dep'] + ' '
+            line += leg['arr'] + ' '
 
-    
-def get_argv():
-    from sys import argv, exit
+            time = sum_time(time, leg['dl'])
+            time = sum_time(time, dr)
 
-    if len(argv)>1:
-        filename = argv[1]
-    else:
-        print(argv[0]+" <input file>")
-        exit(-1)
-
-    return filename
+        return line
 
 
 def read_input_from_file(f):
@@ -239,11 +262,17 @@ def read_input_from_file(f):
 
         elif code == 'L':
             d = {"dep": arg[0], "arr": arg[1], "dl": arg[2]}
-            d.update({ arg[i]: arg[i+1] for i in range(3, len(arg), 2) })
+            d.update({ arg[i]: int(arg[i+1]) for i in range(3, len(arg), 2) })
             L.append(d)
 
     return A, C, P, L
 
+def getleg(state, plane, leg):
+    """Receives the plane index and the leg number and returns a list
+    containing the departure and arrival airport code"""
+    if plane > len(state.schedule) or leg > len(state.schedule[plane]):
+        return [None, None]
+    return [state.schedule[plane][leg]['dep'], state.schedule[plane][leg]['arr']]
 
 def sum_time(t1, t2, sign=1):
     # Receives two time strings and returns one string of the summed time
@@ -261,7 +290,6 @@ def sum_time(t1, t2, sign=1):
     return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
     # Returns string with added zeros if necessary, format hhmm
 
-
 def leg_initial_time(airports, leg):
     dep_time = airports[leg['dep']]['start']
     arr_time = airports[leg['arr']]['start']
@@ -272,29 +300,32 @@ def leg_initial_time(airports, leg):
     else:
         return dep_time
 
+def get_maxprofits(legs):
+    if legs:
+        classes = list(legs[0].keys())[3:]
+
+        for leg in legs:
+            profits = [leg[c] for c in classes]
+            leg['maxprofit'] = max(profits)
+        
+    return legs
+
+
+def get_argv():
+    from sys import argv, exit
+
+    if len(argv)>1:
+        filename = argv[1]
+    else:
+        print(argv[0]+" <input file>")
+        exit(-1)
+
+    return filename
 
 def get_out_filename(in_filename):
     out_filename = os.path.basename(in_filename)
     out_filename = os.path.join('output', out_filename)
     return out_filename
-
-
-def formatted_schedule(A, C, P, i, schedule):
-    line = 'S '
-    line += P[i]['airplane'] + ' '
-
-    time = leg_initial_time(A, schedule[0])
-    dr = C[P[i]['class']]
-
-    for leg in schedule:
-        line += time + ' '
-        line += leg['dep'] + ' '
-        line += leg['arr'] + ' '
-
-        time = sum_time(time, leg['dl'])
-        time = sum_time(time, dr)
-
-    return line
 
 
 if __name__ == '__main__':
@@ -308,7 +339,7 @@ if __name__ == '__main__':
     sol = search.astar_search(p, p.heuristic)
     #sol = search.uniform_cost_search(p)
 
-    # print(p.n_nodes)
+    print(p.n_nodes)
 
     out_filename = get_out_filename(in_filename)
     with open(out_filename, 'w') as f:
@@ -316,22 +347,3 @@ if __name__ == '__main__':
             p.save(f, None)
         else:
             p.save(f, sol.state)
-
-    '''
-    print(p.A, '\n')
-    print(p.C, '\n')
-    print(p.P, '\n')
-    print(p.L, '\n')
-
-    print(sum_time("0630", "1230"))
-
-    print(p.initial.tod, '\n')
-    print(p.initial.schedule, '\n')
-    print(p.initial.remaining, '\n')
-
-    out_filename = get_out_filename(in_filename)
-    test_state = state(2, None)
-    test_state.schedule = [[p.L[0], p.L[1]], [p.L[2], p.L[3]]]
-    with open(out_filename, 'w') as f:
-        p.save(f, test_state)
-    '''
