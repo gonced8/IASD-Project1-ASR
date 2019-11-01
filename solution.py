@@ -35,6 +35,7 @@ class ASARProblem(search.Problem):
 
     def load(self, f):
         self.A, self.C, self.P, self.L = read_input_from_file(f)
+        self.L = get_maxprofits(self.L)
         self.initial = state(len(self.P), self.L)
 
     def save(self, f, s):
@@ -51,7 +52,6 @@ class ASARProblem(search.Problem):
             # Calculate profit
             profit = self.calculate_profit(s)
             f.write('P {}\n'.format(profit))
-
 
     def calculate_profit(self, s):
         profit = 0
@@ -101,14 +101,11 @@ class ASARProblem(search.Problem):
             curr_state = state
         else:
             curr_state = n.state
+
         heurfun = 0
-        maxprofit = 0
         for leg in curr_state.remaining:
-            for airplane_class in list(self.C.keys()):
-                if(int(leg[airplane_class]) > maxprofit):
-                    maxprofit = int(leg[airplane_class])
-            heurfun += 1/maxprofit
-            maxprofit = 0
+            heurfun += 1/leg['maxprofit']
+
         return heurfun
 
     def actions(self, state):
@@ -192,6 +189,17 @@ class ASARProblem(search.Problem):
         return new_state
 
 
+def get_maxprofits(legs):
+    if legs:
+        classes = list(legs[0].keys())[3:]
+
+        for leg in legs:
+            profits = [int(leg[c]) for c in classes]
+            leg['maxprofit'] = max(profits)
+        
+    return legs
+
+    
 def get_argv():
     from sys import argv, exit
 
