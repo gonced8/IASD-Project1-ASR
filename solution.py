@@ -236,7 +236,7 @@ class ASARProblem(search.Problem):
 
             # Calculate profit
             profit = self.calculate_profit(s)
-            f.write('P {}\n'.format(profit))
+            f.write('P {0:.1f}\n'.format(profit))
 
         else:
             print("An error occured in this problem")
@@ -372,7 +372,7 @@ def read_input_from_file(f):
 
         elif code == 'L':
             d = {"dep": arg[0], "arr": arg[1], "dl": arg[2]}
-            d.update({ arg[i]: int(arg[i+1]) for i in range(3, len(arg), 2) })
+            d.update({ arg[i]: float(arg[i+1]) for i in range(3, len(arg), 2) })
             L.append(d)
 
     return A, C, P, L
@@ -385,7 +385,9 @@ def getleg(state, plane, leg):
     return [state.schedule[plane][leg]['dep'], state.schedule[plane][leg]['arr']]
 
 def sum_time(t1, t2, sign=1):
-    # Receives two time strings and returns one string of the summed time
+    """Receives two time strings and returns one string of the summed time
+    Returns string with added zeros if necessary, format hhmm
+    """
     if sign>0:
         sumtime = [int(t1[i:i+2]) + int(t2[i:i+2]) for i in range(0,len(t1),2)]
         if sumtime[1] >= 60: # More than 60 minutes
@@ -398,7 +400,6 @@ def sum_time(t1, t2, sign=1):
             sumtime[1] += 60
 
     return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
-    # Returns string with added zeros if necessary, format hhmm
 
 def leg_initial_time(airports, leg):
     """With the given leg, returns the earliest time at which an airplane could depart
