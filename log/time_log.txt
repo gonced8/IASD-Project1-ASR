@@ -1,8 +1,1 @@
-100 loops, best of 3: 7.07 msec per loop
-100 loops, best of 3: 47.3 msec per loop
-100 loops, best of 3: 12.4 msec per loop
-100 loops, best of 3: 14.1 msec per loop
-100 loops, best of 3: 84.4 msec per loop
-100 loops, best of 3: 236 msec per loop
-100 loops, best of 3: 162 msec per loop
-100 loops, best of 3: 379 msec per loop
+100 loops, best of 5: 373 msec per loop
