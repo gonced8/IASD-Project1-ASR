@@ -117,6 +117,13 @@ class ASARProblem(search.Problem):
         many actions, consider yielding them one at a time in an
         iterator, rather than building them all at once.
 
+        Checks done before returning an action to decrease expanded nodes include:
+            Added leg is compatible with airport opening/closing times
+            Matching "current leg arrival" and "next leg departure" airports
+            Plane can make any more trips (current airport is not closed)
+            If added leg is the last of the airplane, must match with the first airport
+            Before assigning a leg to "empty" airplane, there must be at least to legs left to close the loop
+
         Parameters
         ----------
         state : str
@@ -131,6 +138,9 @@ class ASARProblem(search.Problem):
 
         for idx, airplane_legs in enumerate(state.schedule):
             if not airplane_legs:
+                # Only one leg left and empty airplane, don't add the leg
+                if len(state.remaining) == 1:
+                    continue
                 # Airplane has not flown any legs
                 for next_leg in state.remaining:
                     # Compute new departure time at 2nd airport of leg
@@ -315,6 +325,8 @@ class ASARProblem(search.Problem):
     def nextleg_dep_time(self, leg, idx, dep_time):
         """
         Computes the time at which the airplane can start the next leg
+        Returns -1 if the leg is incompatible with the opening/closing
+        time of the airports
         """
         airports = self.A
         dep_closing_time = airports[leg['dep']]['end']
