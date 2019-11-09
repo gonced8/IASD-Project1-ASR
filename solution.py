@@ -152,7 +152,7 @@ class ASARProblem(search.Problem):
                 # Airplane has not flown any legs
                 for next_leg in state.remaining:
                     # Compute new departure time at 2nd airport of leg
-                    dep_time = leg_initial_time(self.A, next_leg)
+                    dep_time = self.A[next_leg['dep']]['start']
                     new_tod = self.nextleg_dep_time(next_leg, idx, dep_time)
                     if new_tod == -1:
                         continue
@@ -301,7 +301,7 @@ class ASARProblem(search.Problem):
 
     def formatted_schedule(self, i, schedule):
         """Makes a string which represents an airplane schedule, that will be written int the output file (with the formatting specified in the Mini-Project statement)
-        
+
         Receives an index - i - which corresponds to the selected airplane and a list of legs - schedule - with the associated legs. Loops through each schedule and gets a formatted string accordingly to the requisites in the Mini-Project statement.
 
         Parameters
@@ -456,7 +456,7 @@ def leg_initial_time(airports, leg):
     dep = airports[leg['dep']]
     arr = airports[leg['arr']]
     duration = leg['dl']
-    
+
     earliest_arr_time = sum_time(dep['start'], duration)
     earliest_dep_time = sum_time(arr['start'], duration, -1)
 
