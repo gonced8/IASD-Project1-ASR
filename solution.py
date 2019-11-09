@@ -2,6 +2,7 @@
 
 from copy import deepcopy as copy_deepcopy
 import os.path
+from time import time
 
 import search
 
@@ -17,8 +18,14 @@ class state:
         A list of string, where each string represents the time of departure of the i-th plane
     schedule : list of lists of dictionaries
         A list of schedules per plane. The first index corresponds to the plane and the second to the leg, with is a dictionary
-    remaining: list of dictionaries
+    remaining : list of dictionaries
         A list of the remaining legs, that is, legs not yet assigned
+    g : float
+        Value of the cost function
+    h : float
+        Value of the heuristic
+    depth : int
+        Depth of the state (0 is the initial empty state)
 
     Methods
     -------
@@ -26,7 +33,7 @@ class state:
         Compares each state through their evaluation function values: f(n)=g(n)+h(n)
     """
 
-    def __init__(self, nplanes=None, legs=None):
+    def __init__(self, nplanes=None, legs=None, g=0, h=0, depth=0):
         """
         Parameters
         ----------
@@ -48,8 +55,9 @@ class state:
         else:
             self.remaining = None
 
-        self.g = 0
-        self.h = 0
+        self.g = g
+        self.h = h
+        self.depth = depth
 
     def __lt__(self, other):
         """Compares each state through their evaluation function values: f(n)=g(n)+h(n)
@@ -185,6 +193,7 @@ class ASARProblem(search.Problem):
         new_state.remaining.remove(new_leg)
         new_state.g = self.path_cost(state.g, state, action, new_state)
         new_state.h = self.heuristic(None, new_state)
+        new_state.depth += 1
 
         return new_state
 
@@ -502,6 +511,37 @@ def get_out_filename(in_filename):
     out_filename = os.path.join('output', out_filename)
     return out_filename
 
+def str2bool(string):
+    """Converts a string to a boolean
+
+    Parameters:
+    -----------
+    string : string
+    """
+    return string.lower() in ("yes", "y", "true", "t", "1")
+
+def print_stats(args, start, end, p, sol):
+    """Receives the program arguments and prints the specified statistics
+
+    Parameters:
+    -----------
+    args : list of strings
+        The first element of args corresponds to the input file name.
+        The second element is a boolean to print the execution time.
+        The third element is a boolean to print the number of generated nodes.
+        The fourth element is a boolean to print the solution depth.
+    """
+
+    if len(args)>1 and str2bool(args[1]):
+        print("Execution time in seconds:", end-start)
+
+    if len(args)>2 and str2bool(args[2]):
+        print("Number of generated nodes:", p.n_nodes)
+
+    if len(args)>3 and str2bool(args[3]) and sol is not None:
+        print("Solution depth:", sol.depth)
+
+    return
 
 def main(args):
     """ Main function
@@ -511,11 +551,18 @@ def main(args):
     Parameters:
     -----------
     args : list of strings
-        The first element of args corresponds to the input file name. The second element is a boolean to print the number of nodes.
+        The first element of args corresponds to the input file name.
+        The second element is a boolean to print the execution time.
+        The third element is a boolean to print the number of generated nodes.
+        The fourth element is a boolean to print the solution depth.
     """
+
     if(len(args)<1):
         print("No input filename was given. Returned")
         return
+
+    # Measure starting time
+    start = time()
 
     in_filename = args[0]
 
@@ -525,10 +572,6 @@ def main(args):
         p.load(f)
 
     sol = search.astar_search(p, p.heuristic)
-    #sol = search.uniform_cost_search(p)
-
-    if len(args)>1 and bool(args[1]):
-        print(p.n_nodes)
 
     out_filename = get_out_filename(in_filename)
     with open(out_filename, 'w') as f:
@@ -537,9 +580,16 @@ def main(args):
         else:
             p.save(f, sol.state)
 
+    # Measure ending time
+    end = time()
+
+    # Print statistics
+    print_stats(args, start, end, p, sol)
+
 if __name__ == '__main__':
     from sys import argv
     if len(argv)==1:
         print(argv[0]+" <input file>")
+        print(argv[0]+" <input file> <bool time> <bool n_nodes> <bool depth>")
     else:
         main(argv[1:])

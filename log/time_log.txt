@@ -1,1 +1,1 @@
-100 loops, best of 5: 373 msec per loop
+100 loops, best of 5: 434 msec per loop
