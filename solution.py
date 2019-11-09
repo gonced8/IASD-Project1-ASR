@@ -86,8 +86,8 @@ class ASARProblem(search.Problem):
         List of dictionaries where each dictionary represents a leg. Each leg has as keys the departure and arrival airports and the available classes (which values correspond to the profits associated)
     P : list of dictionaries
         List of dictionaries where each dictionary represents an airplane. Each airplane has as keys its name and class
-    maxtotalprofit : float
-        Corresponds to the ideal maximum total profit. This value will be used as a bound to calculate the linear cost with the given profit: cost = maxtotalprofit - profit
+    maxprofitall : float
+        Corresponds to the maximum profit of all legs +1. This value will be used as a bound to calculate the linear cost with the given profit: cost = maxprofitall - profit
     n_nodes : int
         Number of generated nodes
 
@@ -119,7 +119,7 @@ class ASARProblem(search.Problem):
         super().__init__(None)
         self.A = self.C = {}
         self.L = self.P = []
-        self.maxtotalprofit = 0
+        self.maxprofitall = 0
         self.n_nodes = 0
 
     def actions(self, state):
@@ -224,7 +224,7 @@ class ASARProblem(search.Problem):
         With the class information goes to the leg to add and figures out the profit
         For clarity: self.P[a[0]] = {'airplane': 'CS-TUA', 'class': 'a320'}
         """
-        return c + self.maxtotalprofit - a[1][self.P[a[0]]['class']]
+        return c + self.maxprofitall - a[1][self.P[a[0]]['class']]
 
     def heuristic(self, n, state=None):
         """Returns the heuristic of node n, which encapsulates a given state"""
@@ -235,7 +235,7 @@ class ASARProblem(search.Problem):
 
         heurfun = 0
         for leg in curr_state.remaining:
-            heurfun += self.maxtotalprofit - leg['maxprofit']
+            heurfun += self.maxprofitall - leg['maxprofit']
 
         return heurfun
 
@@ -249,7 +249,7 @@ class ASARProblem(search.Problem):
 
         self.A, self.C, self.P, self.L = read_input_from_file(f)
         self.L = get_maxprofits(self.L)
-        self.maxtotalprofit = sum([leg['maxprofit'] for leg in self.L])
+        self.maxprofitall = max([leg['maxprofit'] for leg in self.L]) + 1
         self.initial = state(len(self.P), self.L)
 
     def save(self, f, s):
