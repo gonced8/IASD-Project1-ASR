@@ -114,6 +114,8 @@ class ASARProblem(search.Problem):
     calculate_profit(s)
         Calculates the profit of the provided state (which corresponds to the airplanes schedules)
     nextleg_dep_time(leg, idx, dep_time)
+        Computes the time at which the airplane can start the next leg
+
 
     formatted_schedule(i, schedule)
         Makes a string which represents an airplane schedule, that will be written int the output file
