@@ -112,7 +112,7 @@ class ASARProblem(search.Problem):
         Saves a solution state s to a (opened) file object f (the formatting is specified in the Mini-Project statement).
     calculate_profit(s)
         Calculates the profit of the provided state (which corresponds to the airplanes schedules)
-    departure_time(leg, idx, dep_time)
+    nextleg_dep_time(leg, idx, dep_time)
 
     formatted_schedule(i, schedule)
         Makes a string which represents an airplane schedule, that will be written int the output file
@@ -344,6 +344,40 @@ class ASARProblem(search.Problem):
 
         return profit
 
+    def nextleg_dep_time(self, leg, idx, dep_time):
+        """
+        Computes the time at which the airplane can start the next leg
+
+        Parameters
+        ----------
+        leg : dictionary
+        idx : int
+        dep_time : tod of plane in the previous state
+
+        Returns
+        ----------
+        -1 if the leg is incompatible with the opening/closing time of the airports
+        string otherwise
+        """
+        airports = self.A
+        dep_closing_time = airports[leg['dep']]['end']
+        arr_opening_time = airports[leg['arr']]['start']
+        arr_closing_time = airports[leg['arr']]['end']
+        duration = leg['dl']
+
+        # Minimum time before departing and starting a new flight
+        delta_time = sum_time(duration, self.C[self.P[idx]['class']])
+
+        earliest_arr_time = sum_time(dep_time, duration)
+        earliest_dep_time = sum_time(arr_opening_time, duration, -1)
+
+        if earliest_arr_time < arr_opening_time and earliest_dep_time < dep_closing_time:
+            return sum_time(earliest_dep_time, delta_time)
+        elif earliest_arr_time < arr_closing_time:
+            return sum_time(dep_time, delta_time)
+
+        return -1      # Airport times are not compatible with leg
+
     def formatted_schedule(self, i, schedule):
         """Makes a string which represents an airplane schedule, that will be written int the output file
         (with the formatting specified in the Mini-Project statement)
@@ -381,39 +415,6 @@ class ASARProblem(search.Problem):
 
         return line
 
-    def nextleg_dep_time(self, leg, idx, dep_time):
-        """
-        Computes the time at which the airplane can start the next leg
-
-        Parameters
-        ----------
-        leg : dictionary
-        idx : int
-        dep_time : tod of plane in the previous state
-
-        Returns
-        ----------
-        -1 if the leg is incompatible with the opening/closing time of the airports
-        string otherwise
-        """
-        airports = self.A
-        dep_closing_time = airports[leg['dep']]['end']
-        arr_opening_time = airports[leg['arr']]['start']
-        arr_closing_time = airports[leg['arr']]['end']
-        duration = leg['dl']
-
-        # Minimum time before departing and starting a new flight
-        delta_time = sum_time(duration, self.C[self.P[idx]['class']])
-
-        earliest_arr_time = sum_time(dep_time, duration)
-        earliest_dep_time = sum_time(arr_opening_time, duration, -1)
-
-        if earliest_arr_time < arr_opening_time and earliest_dep_time < dep_closing_time:
-            return sum_time(earliest_dep_time, delta_time)
-        elif earliest_arr_time < arr_closing_time:
-            return sum_time(dep_time, delta_time)
-
-        return -1      # Airport times are not compatible with leg
 
 def read_input_from_file(f):
     """From an open file f, reads each line and processes it, creating the problem input variables.
@@ -491,40 +492,6 @@ def sum_time(t1, t2, sign=1):
 
     return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
 
-def leg_initial_time(airports, leg):
-    """DEPRECATED
-    With the given leg, returns the earliest time at which an airplane could depart
-
-    It takes into account the opening and closing times of each airport
-
-    Parameters
-    ----------
-    airports : dictionary
-        Dictionary with available airports. The key is the airport code and the value is a dictionary with keys: start and end times
-    leg : dictionary
-        Leg which initial time will be computed
-
-    Returns
-    -------
-    string
-        Earliest time at which the aircraft can departure. Empty string '' in case of invalid leg
-    """
-
-    dep = airports[leg['dep']]
-    arr = airports[leg['arr']]
-    duration = leg['dl']
-
-    earliest_arr_time = sum_time(dep['start'], duration)
-    earliest_dep_time = sum_time(arr['start'], duration, -1)
-
-    if earliest_arr_time < arr['start']:    # plane arrives before arrival airport is opened
-        if earliest_dep_time < dep['end']:  # plane departs before departure airport closes
-            return earliest_dep_time
-    else:
-        if earliest_arr_time < arr['end']:  # plane arrives before arrival airport closes
-            return dep['start']
-    return ''                               # invalid leg timing
-
 def get_maxprofits(legs):
     """Loops through each leg and gets the maximum profit of that leg
 
@@ -599,6 +566,7 @@ def print_stats(args, start, end, p, sol):
         print("Solution depth:", sol.depth)
 
     return
+
 
 def main(args):
     """ Main function
