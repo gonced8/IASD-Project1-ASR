@@ -96,15 +96,16 @@ class ASARProblem(search.Problem):
     Methods
     -------
     actions(state)
-
+        Returns the actions that can be executed in the given state
     result(state, action)
-
+        Computes the state that results from executing a given action in the given state
     goal_test(state)
-
+        Checks if the state is a goal state
     path_cost(c, s1, a, s2)
-
+        Calculates the cost of a solution path that arrives at state2 from state1 via action a.
+        Assumes cost c to get up to state1
     heuristic(n, state=None)
-
+        Computes the heuristic of node n, which encapsulates a given state
     load(f)
         Loads a problem from a (opened) file object f (the formatting is specified in the Mini-Project statement).
         Gets the max profit of each leg. Initializes the initial state of this problem
@@ -127,7 +128,7 @@ class ASARProblem(search.Problem):
         self.n_nodes = 0
 
     def actions(self, state):
-        """Return the actions that can be executed in the given
+        """Returns the actions that can be executed in the given
         state. The result would typically be a list, but if there are
         many actions, consider yielding them one at a time in an
         iterator, rather than building them all at once.
@@ -237,7 +238,7 @@ class ASARProblem(search.Problem):
 
     def path_cost(self, c, s1, a, s2):
         """Calculates the cost of a solution path that arrives at state2 from
-        state1 via action, assuming cost c to get up to state1.
+        state1 via action a, assuming cost c to get up to state1.
 
         Receives a = (index of airplane, leg, ...) e.g. (3, {'dep': 'LPPT', 'arr': ...}, ...)
         Goes to the list of airplanes in self and figures out the class of airplane
