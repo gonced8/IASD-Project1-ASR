@@ -374,8 +374,9 @@ class ASARProblem(search.Problem):
         earliest_arr_time = sum_time(dep_time, duration)
         earliest_dep_time = sum_time(arr_opening_time, duration, -1)
 
-        if earliest_arr_time < arr_opening_time and earliest_dep_time < dep_closing_time:
-            return sum_time(earliest_dep_time, delta_time)
+        if earliest_arr_time < arr_opening_time:
+            if earliest_dep_time < dep_closing_time:
+                return sum_time(earliest_dep_time, delta_time)
         elif earliest_arr_time < arr_closing_time:
             return sum_time(dep_time, delta_time)
 
