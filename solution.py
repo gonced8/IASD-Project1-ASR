@@ -365,16 +365,19 @@ class ASARProblem(search.Problem):
         line = 'S '
         line += self.P[i]['airplane'] + ' '
 
-        time = leg_initial_time(self.A, schedule[0])
+        # First departure airport opening time
+        dep_time = self.A[schedule[0]['dep']]['start']
+        # Plane rotation time
         dr = self.C[self.P[i]['class']]
 
         for leg in schedule:
+            dep_time = self.nextleg_dep_time(leg, i, dep_time)
+            time = sum_time(dep_time, leg['dl'], -1)
+            time = sum_time(time, dr, -1)
+
             line += time + ' '
             line += leg['dep'] + ' '
             line += leg['arr'] + ' '
-
-            time = sum_time(time, leg['dl'])
-            time = sum_time(time, dr)
 
         return line
 
@@ -492,7 +495,8 @@ def sum_time(t1, t2, sign=1):
     return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
 
 def leg_initial_time(airports, leg):
-    """With the given leg, returns the earliest time at which an airplane could depart
+    """DEPRECATED
+    With the given leg, returns the earliest time at which an airplane could depart
 
     It takes into account the opening and closing times of each airport
 
