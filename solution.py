@@ -386,6 +386,7 @@ class ASARProblem(search.Problem):
         ----------
         leg : dictionary
         idx : int
+        dep_time : tod of plane in the previous state
 
         Returns
         ----------
@@ -404,16 +405,12 @@ class ASARProblem(search.Problem):
         earliest_arr_time = sum_time(dep_time, duration)
         earliest_dep_time = sum_time(arr_opening_time, duration, -1)
 
-        if earliest_arr_time < arr_opening_time:
-            if earliest_dep_time < dep_closing_time:
-                return sum_time(earliest_dep_time, delta_time)
-            else:
-                return -1
-        else:
-            if earliest_arr_time < arr_closing_time:
-                return sum_time(dep_time, delta_time)
-            else:
-                return -1
+        if earliest_arr_time < arr_opening_time and earliest_dep_time < dep_closing_time:
+            return sum_time(earliest_dep_time, delta_time)
+        elif earliest_arr_time < arr_closing_time:
+            return sum_time(dep_time, delta_time)
+
+        return -1      # Airport times are not compatible with leg
 
 def read_input_from_file(f):
     """From an open file f, reads each line and processes it, creating the problem input variables.
