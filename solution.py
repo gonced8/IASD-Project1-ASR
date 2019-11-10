@@ -67,7 +67,7 @@ class state:
         bool
             True if the evaluation function of the state in the left is less than the one in the right, or False otherwise
         """
-        
+
         return (self.g + self.h) < (other.g + other.h)
 
 
@@ -83,11 +83,13 @@ class ASARProblem(search.Problem):
     C : dictionary
         Dictionary where the keys are the airplanes classes and the values are their rotation times
     L : list of dictionaries
-        List of dictionaries where each dictionary represents a leg. Each leg has as keys the departure and arrival airports and the available classes (which values correspond to the profits associated)
+        List of dictionaries where each dictionary represents a leg.
+        Each leg has as keys the departure and arrival airports and the available classes (which values correspond to the profits associated)
     P : list of dictionaries
         List of dictionaries where each dictionary represents an airplane. Each airplane has as keys its name and class
     maxprofitall : float
-        Corresponds to the maximum profit of all legs +1. This value will be used as a bound to calculate the linear cost with the given profit: cost = maxprofitall - profit
+        Corresponds to the maximum profit of all legs +1.
+        This value will be used as a bound to calculate the linear cost with the given profit: cost = maxprofitall - profit
     n_nodes : int
         Number of generated nodes
 
@@ -104,7 +106,8 @@ class ASARProblem(search.Problem):
     heuristic(n, state=None)
 
     load(f)
-        Loads a problem from a (opened) file object f (the formatting is specified in the Mini-Project statement). Gets the max profit of each leg. Initializes the initial state of this problem
+        Loads a problem from a (opened) file object f (the formatting is specified in the Mini-Project statement).
+        Gets the max profit of each leg. Initializes the initial state of this problem
     save(f)
         Saves a solution state s to a (opened) file object f (the formatting is specified in the Mini-Project statement).
     calculate_profit(s)
@@ -112,7 +115,8 @@ class ASARProblem(search.Problem):
     departure_time(leg, idx, dep_time)
 
     formatted_schedule(i, schedule)
-        Makes a string which represents an airplane schedule, that will be written int the output file (with the formatting specified in the Mini-Project statement)
+        Makes a string which represents an airplane schedule, that will be written int the output file
+        (with the formatting specified in the Mini-Project statement)
     """
 
     def __init__(self):
@@ -180,9 +184,19 @@ class ASARProblem(search.Problem):
                     yield (idx, next_leg, new_tod)
 
     def result(self, state, action):
-        """Return the state that results from executing the given
+        """Computes the state that results from executing a given
         action in the given state. The action must be one of
-        self.actions(state)."""
+        self.actions(state).
+
+        Parameters
+        ----------
+        state : object
+        action : tuple
+
+        Returns
+        ----------
+        new_state : object
+        """
         self.n_nodes += 1
 
         new_state = copy_deepcopy(state)
@@ -201,7 +215,13 @@ class ASARProblem(search.Problem):
         return new_state
 
     def goal_test(self, state):
-        """Returns True if the state is a goal. False otherwise"""
+        """Checks if the state is a goal state
+
+        Returns
+        -------
+        bool
+            True if we are in a goal state, or False otherwise
+        """
         if not state.remaining:
             # There are no remaining legs to add
             # We can check the validity of our solution
@@ -216,18 +236,38 @@ class ASARProblem(search.Problem):
             return False
 
     def path_cost(self, c, s1, a, s2):
-        """Return the cost of a solution path that arrives at state2 from
+        """Calculates the cost of a solution path that arrives at state2 from
         state1 via action, assuming cost c to get up to state1.
-        
+
         Receives a = (index of airplane, leg, ...) e.g. (3, {'dep': 'LPPT', 'arr': ...}, ...)
         Goes to the list of airplanes in self and figures out the class of airplane
         With the class information goes to the leg to add and figures out the profit
         For clarity: self.P[a[0]] = {'airplane': 'CS-TUA', 'class': 'a320'}
+
+        Parameters
+        ----------
+        c : float
+        a : tuple
+        s1, s2 : object
+
+        Returns
+        -------
+        float
         """
         return c + self.maxprofitall - a[1][self.P[a[0]]['class']]
 
     def heuristic(self, n, state=None):
-        """Returns the heuristic of node n, which encapsulates a given state"""
+        """Computes the heuristic of node n, which encapsulates a given state
+
+        Parameters
+        ----------
+        n : object
+        state : object
+
+        Returns
+        -------
+        heurfun : float
+        """
         if n is None:
             curr_state = state
         else:
@@ -240,7 +280,8 @@ class ASARProblem(search.Problem):
         return heurfun
 
     def load(self, f):
-        """Loads a problem from a (opened) file object f (the formatting is specified in the Mini-Project statement). Gets the max profit of each leg. Initializes the initial state of this problem
+        """Loads a problem from a (opened) file object f (the formatting is specified in the Mini-Project statement).
+        Gets the max profit of each leg. Initializes the initial state of this problem
 
         Parameters
         ----------
@@ -282,14 +323,14 @@ class ASARProblem(search.Problem):
         """Calculates the profit of the provided state (which corresponds to the airplanes schedules)
 
         Loops through each schedule in the state s and sums the correspoing profit to a total profit
-        
+
         Parameters
         ----------
         s : state object
 
         Returns
         -------
-        profit : int
+        profit : float
             sum of the profits of each schedules
         """
 
@@ -304,9 +345,11 @@ class ASARProblem(search.Problem):
         return profit
 
     def formatted_schedule(self, i, schedule):
-        """Makes a string which represents an airplane schedule, that will be written int the output file (with the formatting specified in the Mini-Project statement)
+        """Makes a string which represents an airplane schedule, that will be written int the output file
+        (with the formatting specified in the Mini-Project statement)
 
-        Receives an index - i - which corresponds to the selected airplane and a list of legs - schedule - with the associated legs. Loops through each schedule and gets a formatted string accordingly to the requisites in the Mini-Project statement.
+        Receives an index - i - which corresponds to the selected airplane and a list of legs - schedule - with the associated legs.
+        Loops through each schedule and gets a formatted string accordingly to the requisites in the Mini-Project statement.
 
         Parameters
         ----------
@@ -338,8 +381,16 @@ class ASARProblem(search.Problem):
     def nextleg_dep_time(self, leg, idx, dep_time):
         """
         Computes the time at which the airplane can start the next leg
-        Returns -1 if the leg is incompatible with the opening/closing
-        time of the airports
+
+        Parameters
+        ----------
+        leg : dictionary
+        idx : int
+
+        Returns
+        ----------
+        -1 if the leg is incompatible with the opening/closing time of the airports
+        string otherwise
         """
         airports = self.A
         dep_closing_time = airports[leg['dep']]['end']
@@ -415,16 +466,17 @@ def read_input_from_file(f):
 
     return A, C, P, L
 
-def getleg(state, plane, leg):
-    """Receives the plane index and the leg number and returns a list
-    containing the departure and arrival airport code"""
-    if plane > len(state.schedule) or leg > len(state.schedule[plane]):
-        return [None, None]
-    return [state.schedule[plane][leg]['dep'], state.schedule[plane][leg]['arr']]
-
 def sum_time(t1, t2, sign=1):
-    """Receives two time strings and returns one string of the summed time
-    Returns string with added zeros if necessary, format hhmm
+    """Computes the sum or the difference between two time strings, depending on a flag
+
+    Parameters
+    ----------
+    t1, t2 : string
+    sign : int
+
+    Returns
+    ----------
+    string with added zeros if necessary, format hhmm
     """
     if sign>0:
         sumtime = [int(t1[i:i+2]) + int(t2[i:i+2]) for i in range(0,len(t1),2)]
@@ -494,7 +546,7 @@ def get_maxprofits(legs):
         for leg in legs:
             profits = [leg[c] for c in classes]
             leg['maxprofit'] = max(profits)
-        
+
     return legs
 
 def get_out_filename(in_filename):
@@ -549,7 +601,7 @@ def print_stats(args, start, end, p, sol):
 
 def main(args):
     """ Main function
-    
+
     Initializes the problem and solves it with A* search. Saves the result in a file inside output folder
 
     Parameters:
