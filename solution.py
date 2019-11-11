@@ -136,9 +136,9 @@ class ASARProblem(search.Problem):
         Checks done before returning an action to decrease expanded nodes include:
             Added leg is compatible with airport opening/closing times
             Matching "current leg arrival" and "next leg departure" airports
-            Plane can make any more trips (current airport is not closed)
+            Plane can make more trips (current airport is not closed)
             If added leg is the last of the airplane, must match with the first airport
-            Before assigning a leg to "empty" airplane, there must be at least to legs left to close the loop
+            Before assigning a leg to "empty" airplane, there must be at least two legs left to close the loop
 
         Parameters
         ----------
@@ -154,32 +154,25 @@ class ASARProblem(search.Problem):
 
         for idx, airplane_legs in enumerate(state.schedule):
             if not airplane_legs:
-                # Only one leg left and empty airplane, don't add the leg
-                if len(state.remaining) == 1:
+                if len(state.remaining) == 1:      # One leg left and empty airplane, don't add
                     continue
-                # Airplane has not flown any legs
                 for next_leg in state.remaining:
-                    # Compute new departure time at 2nd airport of leg
                     dep_time = self.A[next_leg['dep']]['start']
                     new_tod = self.nextleg_dep_time(next_leg, idx, dep_time)
-                    if new_tod == -1:
+                    if new_tod == -1:             # Conflict regarding times, don't add
                         continue
                     yield (idx, next_leg, new_tod)
             else:
-                if not state.tod[idx]:
-                    # Empty string, schedule for this airplane is full
+                if not state.tod[idx]:            # Empty string, schedule for this airplane is full
                     continue
                 for next_leg in state.remaining:
                     if next_leg['dep'] != airplane_legs[-1]['arr']:
                         continue
                     new_tod = self.nextleg_dep_time(next_leg, idx, state.tod[idx])
-                    if new_tod == -1:
-                        # Is not valid time-wise
+                    if new_tod == -1:             # Conflict regarding times, don't add
                         continue
-                    if new_tod > self.A[next_leg['arr']]['end']:
-                        # Can't leave the last airport
-                        if airplane_legs[0]['dep'] != next_leg['arr']:
-                            # Beginning and final airports don't match, invalid node
+                    if new_tod > self.A[next_leg['arr']]['end']:  # Will be the plane's last airport
+                        if airplane_legs[0]['dep'] != next_leg['arr']: # Does not loop back, invalid node
                             continue
                         new_tod = ''
                     yield (idx, next_leg, new_tod)
