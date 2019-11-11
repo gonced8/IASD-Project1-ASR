@@ -1,3 +1,1 @@
-Execution time in seconds: 1.2458460330963135
-Number of generated nodes: 2023
-Solution depth: 8
+235 paths have been expanded and 1788 paths remain in the frontier

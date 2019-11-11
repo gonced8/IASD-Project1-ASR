@@ -24,8 +24,6 @@ class state:
         Value of the cost function
     h : float
         Value of the heuristic
-    depth : int
-        Depth of the state (0 is the initial empty state)
 
     Methods
     -------
@@ -33,7 +31,7 @@ class state:
         Compares each state through their evaluation function values: f(n)=g(n)+h(n)
     """
 
-    def __init__(self, nplanes=None, legs=None, g=0, h=0, depth=0):
+    def __init__(self, nplanes=None, legs=None, g=0, h=0):
         """
         Parameters
         ----------
@@ -57,7 +55,6 @@ class state:
 
         self.g = g
         self.h = h
-        self.depth = depth
 
     def __lt__(self, other):
         """Compares each state through their evaluation function values: f(n)=g(n)+h(n)
@@ -90,8 +87,6 @@ class ASARProblem(search.Problem):
     maxprofitall : float
         Corresponds to the maximum profit of all legs +1.
         This value will be used as a bound to calculate the linear cost with the given profit: cost = maxprofitall - profit
-    n_nodes : int
-        Number of generated nodes
 
     Methods
     -------
@@ -125,7 +120,6 @@ class ASARProblem(search.Problem):
         self.A = self.C = {}
         self.L = self.P = []
         self.maxprofitall = 0
-        self.n_nodes = 0
 
     def actions(self, state):
         """Returns the actions that can be executed in the given
@@ -191,7 +185,6 @@ class ASARProblem(search.Problem):
         ----------
         new_state : object
         """
-        self.n_nodes += 1
 
         new_state = copy_deepcopy(state)
 
@@ -204,7 +197,6 @@ class ASARProblem(search.Problem):
         new_state.remaining.remove(new_leg)
         new_state.g = self.path_cost(state.g, state, action, new_state)
         new_state.h = self.heuristic(None, new_state)
-        new_state.depth += 1
 
         return new_state
 
@@ -541,29 +533,6 @@ def str2bool(string):
     """
     return string.lower() in ("yes", "y", "true", "t", "1")
 
-def print_stats(args, start, end, p, sol):
-    """Receives the program arguments and prints the specified statistics
-
-    Parameters:
-    -----------
-    args : list of strings
-        The first element of args corresponds to the input file name.
-        The second element is a boolean to print the execution time.
-        The third element is a boolean to print the number of generated nodes.
-        The fourth element is a boolean to print the solution depth.
-    """
-
-    if len(args)>1 and str2bool(args[1]):
-        print("Execution time in seconds:", end-start)
-
-    if len(args)>2 and str2bool(args[2]):
-        print("Number of generated nodes:", p.n_nodes)
-
-    if len(args)>3 and str2bool(args[3]) and sol is not None:
-        print("Solution depth:", sol.depth)
-
-    return
-
 
 def main(args):
     """ Main function
@@ -574,26 +543,24 @@ def main(args):
     -----------
     args : list of strings
         The first element of args corresponds to the input file name.
-        The second element is a boolean to print the execution time.
-        The third element is a boolean to print the number of generated nodes.
-        The fourth element is a boolean to print the solution depth.
+        The second element is a boolean to print the search statistics.
     """
 
     if(len(args)<1):
         print("No input filename was given. Returned")
         return
 
-    # Measure starting time
-    start = time()
-
-    in_filename = args[0]
-
     p = ASARProblem()
 
+    in_filename = args[0]
     with open(in_filename, 'r') as f:
         p.load(f)
 
-    sol = search.astar_search(p, p.heuristic)
+    if(len(args)>1):
+        display = str2bool(args[1])
+        sol = search.astar_search(p, p.heuristic, display)
+    else:
+        sol = search.astar_search(p, p.heuristic)
 
     out_filename = get_out_filename(in_filename)
     with open(out_filename, 'w') as f:
@@ -602,16 +569,10 @@ def main(args):
         else:
             p.save(f, sol.state)
 
-    # Measure ending time
-    end = time()
-
-    # Print statistics
-    print_stats(args, start, end, p, sol)
-
 if __name__ == '__main__':
     from sys import argv
     if len(argv)==1:
         print(argv[0]+" <input file>")
-        print(argv[0]+" <input file> <bool time> <bool n_nodes> <bool depth>")
+        print(argv[0]+" <input file> <bool statistics>")
     else:
         main(argv[1:])
