@@ -290,7 +290,7 @@ class ASARProblem(search.Problem):
         """
 
         self.A, self.C, self.P, self.L = read_input_from_file(f)
-        self.L = get_maxprofits(self.L)
+        self.L = get_maxprofits(self.L, self.C)
         self.maxprofitall = max([leg['maxprofit'] for leg in self.L]) + 1
         self.initial = state(len(self.P), self.L)
 
@@ -494,7 +494,7 @@ def sum_time(t1, t2, sign=1):
 
     return "{:02d}{:02d}".format(sumtime[0], sumtime[1])
 
-def get_maxprofits(legs):
+def get_maxprofits(legs, classes):
     """Loops through each leg and gets the maximum profit of that leg
 
     The max profit is added as key to the legs dictionary
@@ -503,6 +503,8 @@ def get_maxprofits(legs):
     ----------
     legs : list of dictionaries
         List of dictionaries, where each dictionary represents a leg
+    classes : dictionary
+        Dictionary that will contain the existing airplane classes
 
     Returns
     -------
@@ -511,7 +513,7 @@ def get_maxprofits(legs):
     """
 
     if legs:
-        classes = list(legs[0].keys())[3:]
+        classes = list(classes.keys())
 
         for leg in legs:
             profits = [leg[c] for c in classes]
