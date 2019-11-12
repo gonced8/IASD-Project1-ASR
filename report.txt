@@ -1,10 +1,17 @@
-The state is defined as a class. It has the attribute tod, where, for every plane, we will have the time of day that plane is at. As for the attribute schedule, it is a list of lists containing dictionaries, where, for every plane, we will have the legs (each a dictionary) assigned to it, in order. Lastly, the attribute remaining is a list of dictionaries, containg the legs that have yet to be added.
-The operators are just adding a new leg to the schedule of any given airplane.
+The state is defined as a class. It has the attribute tod, where, for every plane, we will have the time of day that plane is at. As for the attribute schedule, it is a list of lists containing dictionaries, where, for every plane, we will have the legs assigned to him, in order. Lastly, the attribute remaining is a list of dictionaries, containing the legs that have yet to be added.
+The operators are just adding a new leg to any given airplane.
 
+The cost function of one action is defined as the maximum of the maximum profits of each leg + 1 (constant defined as "bound" = C) minus the profit of the added leg. That is, if a leg was added to an airplane of a class i, the cost will increase by: C– profit_c_i(leg).
+The heuristic is defined as the summation of the value C– max(profit_c_i(leg)), for every leg that has yet to be added to the airplanes’ schedules.
 
-Let C = bound. From one state, N, to the next, P, g(n) grows C – profit_c_i(N->P) and h(n) decreases C – max(profit_c_i(N->P)). That is, c(N,P) = C – profit_c_i(N->P) and h(P) = h(N) – (C - max(profit_c_i(N->P))). These equations will be replaced in the consistency inequation.
-Replacing in h(N) <= c(N,P) + h(P), we get: 0 <= –profit_c_i(N->P) + max(profit_c_i(N->P). Thus, the equality is verified and our heuristic is consistent. As such, A* returns the optimal solution.
+From one state, N, to the next, P, g(n) grows C - profit_c_i(N->P) and h(n) decreases C – max(profit_c_i(N->P)). That is, c(N,P) = C - profit_c_i(N->P) and h(P) = h(N) - (C - max(profit_c_i(N->P))). These equations will be replaced in the consistency inequation.
+Replacing in h(N) <= c(N,P) + h(P), we get: 0 <= –profit_c_i(N->P) + max(profit_c_i(N->P). Thus, the equality is verified and our heuristic is consistent. As such, A* is optimal.
 
-
-The cost function of one action is defined as the maximum of the maximum profits of each leg + 1 (constant defined as "bound") minus the profit of the added leg. That is, if a leg was added to an airplane of a class i, the cost will increase by: bound – profit_c_i(leg).
-The heuristic is defined as the summation of the value bound – max(profit_c_i(leg)), for every leg that has yet to be added to the airplanes’ schedules.
+Example1: # of generated nodes = 82, sol depth = 6, effective branching factor = 1.832
+Example2: # of generated nodes = 163, sol depth = 8, effective branching factor = 1.692
+Example3: # of generated nodes = 72, sol depth = 4, effective branching factor = 2.583
+Example4: # of generated nodes = 205, sol depth = 6, effective branching factor = 2.196
+Example5: # of generated nodes = 614, sol depth = 8, effective branching factor = 2.053
+Example6: # of generated nodes = 1296, sol depth = Infeasable, effective branching factor -
+Example7: # of generated nodes = 1041, sol depth = 6, effective branching factor = 2.974
+Example8: # of generated nodes = 2023, sol depth = 8, effective branching factor = 2.423
