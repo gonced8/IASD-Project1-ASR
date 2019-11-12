@@ -165,7 +165,7 @@ class ASARProblem(search.Problem):
                     new_tod = self.nextleg_dep_time(next_leg, idx, state.tod[idx])
                     if new_tod == -1:             # Conflict regarding times, don't add
                         continue
-                    if new_tod > self.A[next_leg['arr']]['end']:  # Will be the plane's last airport
+                    if new_tod >= self.A[next_leg['arr']]['end']:  # Will be the plane's last airport
                         if airplane_legs[0]['dep'] != next_leg['arr']: # Does not loop back, invalid node
                             continue
                         new_tod = ''
